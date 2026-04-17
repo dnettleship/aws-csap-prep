@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ElastiCache — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="aurora.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>ElastiCache</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-db">Databases</div>
+    <h1>Amazon ElastiCache</h1>
+    <p class="subtitle">Redis vs Memcached, caching strategies, Multi-AZ, session storage, pub/sub</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Redis vs Memcached</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Feature</th><th>Redis</th><th>Memcached</th></tr></thead>
+    <tbody>
+      <tr><td>Data structures</td><td>Strings, hashes, lists, sets, sorted sets, bitmaps, HyperLogLog, streams</td><td>Strings only</td></tr>
+      <tr><td>Persistence</td><td>RDB snapshots + AOF (append-only file)</td><td>None — in-memory only</td></tr>
+      <tr><td>Replication</td><td>Yes — primary + up to 5 read replicas</td><td>No</td></tr>
+      <tr><td>Multi-AZ failover</td><td>Yes — automatic failover to replica</td><td>No</td></tr>
+      <tr><td>Pub/Sub messaging</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Sorted sets / leaderboards</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Multi-threading</td><td>Single-threaded (mostly)</td><td>Multi-threaded — scales horizontally across cores</td></tr>
+      <tr><td>Cluster mode</td><td>Yes — sharding across nodes</td><td>Yes — but no replication per shard</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Redis: Key Capabilities</h2>
+  <ul>
+    <li><strong>Sub-millisecond latency</strong> — ideal for session stores, leaderboards, rate limiters, caching</li>
+    <li><strong>Multi-AZ with automatic failover</strong> — primary + replica in separate AZs; failover in ~30–60 seconds; promotes a replica to primary</li>
+    <li><strong>Redis Cluster Mode</strong> — data sharded across multiple node groups (shards); each shard has its own primary + replicas; scales both read and write throughput</li>
+    <li><strong>Global Datastore</strong> — cross-region active-passive replication; secondary clusters can serve reads; promotes secondary on regional failure</li>
+    <li><strong>Backup &amp; restore</strong> — RDB snapshots to S3; restore to a new cluster</li>
+  </ul>
+
+  <h2>Caching Strategies</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Strategy</th><th>How It Works</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Lazy Loading (Cache-aside)</strong></td><td>App checks cache first; on miss, reads from DB and writes to cache</td><td>Stale data possible; cold start misses add latency</td></tr>
+      <tr><td><strong>Write-Through</strong></td><td>App writes to cache and DB on every write</td><td>Cache always fresh; extra write latency; cache churn for rarely-read data</td></tr>
+      <tr><td><strong>Write-Behind (Write-back)</strong></td><td>Write to cache first; async flush to DB</td><td>Lower write latency; risk of data loss if cache fails before flush</td></tr>
+      <tr><td><strong>TTL-based expiry</strong></td><td>Set expiry on cached items; auto-evicted after TTL</td><td>Simple staleness control; tuning TTL is application-specific</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Session Store Pattern</h2>
+  <ul>
+    <li>Store HTTP session data in ElastiCache Redis rather than on the application server</li>
+    <li>Makes application tier <strong>stateless</strong> — any instance can serve any request</li>
+    <li>Enables clean Auto Scaling and instance replacement without session loss</li>
+    <li>Alternative: DynamoDB for session storage (lower cost, more durable, millisecond vs sub-millisecond)</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Sub-millisecond session storage that survives node failure</td><td>ElastiCache Redis with Multi-AZ</td></tr>
+      <tr><td>Leaderboard / ranked sorted data structure</td><td>ElastiCache Redis sorted sets</td></tr>
+      <tr><td>Real-time pub/sub messaging between services</td><td>ElastiCache Redis pub/sub</td></tr>
+      <tr><td>Simple cache, multi-threaded, no persistence needed</td><td>ElastiCache Memcached</td></tr>
+      <tr><td>Offload read traffic from RDS</td><td>ElastiCache Redis (lazy loading or write-through)</td></tr>
+      <tr><td>Cross-region cache replication</td><td>ElastiCache Redis Global Datastore</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Memcached has <strong>no replication, no persistence, no failover</strong> — a node failure loses all cached data</li>
+      <li>Redis Multi-AZ failover takes ~30–60s — cache-dependent apps must handle cache misses gracefully during this window</li>
+      <li>ElastiCache is deployed <strong>in a VPC</strong> — not publicly accessible; application and cache must be in the same VPC or connected VPCs</li>
+      <li>Redis Cluster Mode changes the key space distribution — not all Redis commands work across shards (e.g. multi-key operations only work if keys are in the same shard)</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Redis vs Memcached</a></li>
+      <li><a href="#">Redis Capabilities</a></li>
+      <li><a href="#">Caching Strategies</a></li>
+      <li><a href="#">Session Store</a></li>
+      <li><a href="#">Exam Scenarios</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="dynamodb.html">DynamoDB</a></li>
+      <li><a href="aurora.html">Aurora</a></li>
+      <li><a href="../../architecture-patterns/high-availability.html">High Availability</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Route 53 — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>Route 53</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-net">Networking</div>
+    <h1>Amazon Route 53</h1>
+    <p class="subtitle">Routing policies, health checks, DNS failover, private hosted zones</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Routing Policies</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Policy</th><th>Behaviour</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Simple</strong></td><td>Single resource; no health checks; can return multiple IPs (client picks one)</td><td>Single-region, single endpoint</td></tr>
+      <tr><td><strong>Weighted</strong></td><td>Traffic split by configured weight (0–255); weight 0 = no traffic</td><td>Canary deploys, A/B testing, gradual migration</td></tr>
+      <tr><td><strong>Latency</strong></td><td>Routes to region with lowest measured latency for the user</td><td>Active-active multi-region; global performance</td></tr>
+      <tr><td><strong>Failover</strong></td><td>Active-passive; health check monitors primary; automatic cutover to secondary on failure</td><td>DR primary/secondary setup</td></tr>
+      <tr><td><strong>Geolocation</strong></td><td>Routes by country or continent; must configure a default record</td><td>Data sovereignty, localised content, geo-blocking</td></tr>
+      <tr><td><strong>Geoproximity</strong></td><td>Routes by geographic distance; <em>bias</em> value shifts the boundary</td><td>Fine-grained regional traffic shifting (requires Traffic Flow)</td></tr>
+      <tr><td><strong>Multivalue Answer</strong></td><td>Returns up to 8 healthy records; basic client-side load balancing</td><td>Simple HA without a load balancer</td></tr>
+      <tr><td><strong>IP-based</strong></td><td>Routes based on the client's IP CIDR</td><td>ISP-specific routing, on-premises differentiation</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Health Checks</h2>
+  <ul>
+    <li><strong>Endpoint health checks</strong> — poll an HTTP/HTTPS/TCP endpoint every 10 or 30 seconds; threshold of consecutive failures triggers unhealthy state</li>
+    <li><strong>Calculated health checks</strong> — combine multiple child health checks with AND/OR logic; useful for composite service health</li>
+    <li><strong>CloudWatch alarm health checks</strong> — mark unhealthy when a CloudWatch alarm enters ALARM state; use for private resources that can't be polled directly</li>
+    <li>Health checks used with <strong>Failover routing</strong> determine when to cut over to the secondary</li>
+    <li>Health checks used with <strong>Weighted / Latency / Multivalue</strong> remove unhealthy records from responses</li>
+    <li><strong>Propagation time</strong>: ~30–60 seconds from unhealthy detection to DNS propagation — factor into RTO</li>
+  </ul>
+
+  <h2>Alias vs CNAME</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Alias</th><th>CNAME</th></tr></thead>
+    <tbody>
+      <tr><td>Works at zone apex (e.g. example.com)</td><td>Yes</td><td>No</td></tr>
+      <tr><td>DNS query charge</td><td>Free for AWS targets</td><td>Charged per query</td></tr>
+      <tr><td>Targets</td><td>AWS resources only (ELB, CloudFront, S3, API GW, etc.)</td><td>Any hostname</td></tr>
+      <tr><td>Health checks</td><td>Supported</td><td>Supported</td></tr>
+      <tr><td>TTL</td><td>Set by AWS; not configurable</td><td>Configurable</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Private Hosted Zones</h2>
+  <ul>
+    <li>DNS resolution within a VPC — not visible over the internet</li>
+    <li>Must enable <strong>DNS Resolution</strong> and <strong>DNS Hostnames</strong> on the VPC</li>
+    <li>Associate with multiple VPCs (including cross-account VPCs)</li>
+    <li>Split-horizon DNS: same domain name resolves differently inside vs outside a VPC</li>
+  </ul>
+
+  <h2>DNSSEC</h2>
+  <ul>
+    <li>Route 53 supports DNSSEC signing for public hosted zones</li>
+    <li>Protects against DNS spoofing / cache poisoning</li>
+    <li>Uses KMS asymmetric keys for signing</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Route users to lowest-latency region (active-active)</td><td>Latency routing policy</td></tr>
+      <tr><td>Automatic DNS failover to DR region</td><td>Failover routing + health check on primary</td></tr>
+      <tr><td>Send 10% of traffic to new app version</td><td>Weighted routing (10 / 90 weights)</td></tr>
+      <tr><td>Restrict EU users to EU-region endpoint (data sovereignty)</td><td>Geolocation routing by continent</td></tr>
+      <tr><td>DNS record at zone apex pointing to ALB</td><td>Alias record (CNAME not allowed at apex)</td></tr>
+      <tr><td>Health check for resource in private subnet (no public endpoint)</td><td>CloudWatch alarm health check</td></tr>
+      <tr><td>Gradual traffic shift between regions with geographic boundary control</td><td>Geoproximity routing with bias</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Route 53 is a <strong>global</strong> service — hosted zones are not region-specific</li>
+      <li>Failover routing requires health checks — without them it always points to primary</li>
+      <li>Geolocation routing requires a <strong>default record</strong> — traffic with no matching geolocation returns NXDOMAIN otherwise</li>
+      <li>Latency routing is based on AWS-measured latency, not geographic distance — geographically close regions can have different latency rankings</li>
+      <li>Simple routing with multiple values returns all IPs — client picks one; no health check support</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Routing Policies</a></li>
+      <li><a href="#">Health Checks</a></li>
+      <li><a href="#">Alias vs CNAME</a></li>
+      <li><a href="#">Private Hosted Zones</a></li>
+      <li><a href="#">Exam Scenarios</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../../architecture-patterns/disaster-recovery.html">Disaster Recovery</a></li>
+      <li><a href="../../architecture-patterns/high-availability.html">High Availability</a></li>
+      <li><a href="../../services/networking/cloudfront.html">CloudFront</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

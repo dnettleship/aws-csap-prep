@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KMS &amp; Secrets Manager — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="iam-organizations.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>KMS &amp; Secrets Manager</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-sec">Security</div>
+    <h1>KMS &amp; Secrets Manager</h1>
+    <p class="subtitle">Key types, envelope encryption, key policies, CloudHSM, secret rotation</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>KMS Key Types</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Managed by</th><th>Rotation</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><strong>AWS Managed Key</strong></td><td>AWS (per service, e.g. aws/s3)</td><td>Automatic every 3 years</td><td>Free</td></tr>
+      <tr><td><strong>Customer Managed Key (CMK)</strong></td><td>You</td><td>Optional annual auto-rotation; or manual</td><td>$1/month + API call fees</td></tr>
+      <tr><td><strong>Customer-provided key material</strong></td><td>You (import own key)</td><td>Manual only</td><td>$1/month</td></tr>
+      <tr><td><strong>Multi-region key</strong></td><td>You</td><td>Same as CMK</td><td>$1/month per replica region</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Envelope Encryption</h2>
+  <ul>
+    <li>KMS keys (<strong>Key Encryption Keys / KEK</strong>) encrypt data keys, not the data directly</li>
+    <li>Flow: generate a <strong>data key</strong> (plaintext + encrypted copy) via <code>GenerateDataKey</code> → encrypt data locally with plaintext data key → discard plaintext key → store encrypted data + encrypted data key together</li>
+    <li>To decrypt: call KMS <code>Decrypt</code> with the encrypted data key → KMS returns plaintext data key → decrypt data locally</li>
+    <li>Benefit: data is encrypted locally (fast), KMS only handles small data keys (audit trail, access control)</li>
+  </ul>
+
+  <h2>Key Policy</h2>
+  <ul>
+    <li>Every KMS key has a <strong>resource-based key policy</strong> — this is the primary access control mechanism</li>
+    <li>IAM policies alone cannot grant KMS access — <strong>key policy must explicitly allow it</strong> (or delegate to IAM with <code>"Principal": {"AWS": "arn:aws:iam::ACCOUNT:root"}</code>)</li>
+    <li>Grants: temporary, programmatic delegations; used by AWS services on your behalf (e.g. AWS Secrets Manager rotating a secret)</li>
+    <li>Cross-account access: add target account principal to key policy, then target account IAM policy allows the KMS actions</li>
+  </ul>
+
+  <h2>Key Rotation</h2>
+  <ul>
+    <li>Auto-rotation creates new key material but retains the same Key ID — no re-encryption of existing data needed</li>
+    <li>Old key material is retained to decrypt data encrypted with previous versions</li>
+    <li>Key rotation does <strong>not</strong> re-encrypt existing ciphertext — you must do that explicitly if required</li>
+  </ul>
+
+  <h2>CloudHSM</h2>
+  <ul>
+    <li>Dedicated hardware security module (FIPS 140-2 Level 3) in your VPC</li>
+    <li>AWS manages hardware; <strong>you manage keys and users</strong> — AWS has no access to key material</li>
+    <li>Use when: compliance requires dedicated HSM, or need to export keys, or use custom/non-symmetric algorithms</li>
+    <li>CloudHSM cluster spans AZs for HA; keys synchronised across instances</li>
+    <li>Can be used as a custom key store for KMS — CMKs backed by CloudHSM</li>
+  </ul>
+
+  <h2>AWS Secrets Manager</h2>
+  <ul>
+    <li>Stores, retrieves, and automatically <strong>rotates</strong> secrets (DB credentials, API keys, tokens)</li>
+    <li>Automatic rotation uses a Lambda function; built-in support for RDS, Redshift, DocumentDB, Elasticache</li>
+    <li>Secrets encrypted at rest with KMS (AWS managed or CMK)</li>
+    <li>Cross-account access via resource-based policy on the secret</li>
+    <li>Replicate secrets to multiple regions for DR and latency</li>
+    <li>Charges per secret per month + per 10,000 API calls</li>
+  </ul>
+
+  <h2>Parameter Store vs Secrets Manager</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Parameter Store</th><th>Secrets Manager</th></tr></thead>
+    <tbody>
+      <tr><td>Automatic rotation</td><td>No</td><td>Yes (Lambda-based)</td></tr>
+      <tr><td>Cost</td><td>Free (Standard tier); $0.05/advanced parameter/month</td><td>$0.40/secret/month</td></tr>
+      <tr><td>Encryption</td><td>SecureString (KMS); plaintext String</td><td>Always encrypted with KMS</td></tr>
+      <tr><td>Hierarchical names</td><td>Yes — /app/env/key paths</td><td>No hierarchy</td></tr>
+      <tr><td>Versioning</td><td>Up to 100 versions</td><td>Versioned with AWSCURRENT/AWSPREVIOUS labels</td></tr>
+      <tr><td>Best for</td><td>Config, feature flags, non-rotating secrets</td><td>Database credentials, API keys needing rotation</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Automatically rotate RDS password every 30 days</td><td>AWS Secrets Manager with RDS rotation Lambda</td></tr>
+      <tr><td>IAM allows kms:Decrypt but access is still denied</td><td>Key policy must also allow the principal — check key policy</td></tr>
+      <tr><td>FIPS 140-2 Level 3 compliance for key storage</td><td>CloudHSM (KMS is Level 2)</td></tr>
+      <tr><td>Encrypt large files using KMS without 4 KB limit</td><td>Envelope encryption — use GenerateDataKey, encrypt locally</td></tr>
+      <tr><td>Share encrypted S3 objects with another AWS account</td><td>CMK with cross-account key policy + target account IAM policy</td></tr>
+      <tr><td>Store app config and non-sensitive values cheaply</td><td>Parameter Store (free Standard tier)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>KMS <strong>key policy AND IAM policy</strong> must both allow — IAM alone is not sufficient</li>
+      <li>KMS encrypt/decrypt API has a <strong>4 KB limit</strong> — use envelope encryption for larger data</li>
+      <li>CloudHSM is FIPS 140-2 <strong>Level 3</strong>; KMS is Level 2 — for compliance requiring Level 3, choose CloudHSM</li>
+      <li>Secrets Manager rotation briefly has two versions of the secret (AWSPENDING, AWSCURRENT) — apps must handle this window</li>
+      <li>Deleting a KMS key has a <strong>7–30 day waiting period</strong> — there is no immediate deletion</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">KMS Key Types</a></li>
+      <li><a href="#">Envelope Encryption</a></li>
+      <li><a href="#">Key Policy</a></li>
+      <li><a href="#">CloudHSM</a></li>
+      <li><a href="#">Secrets Manager</a></li>
+      <li><a href="#">Parameter Store vs Secrets Manager</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="iam-organizations.html">IAM &amp; Organizations</a></li>
+      <li><a href="../../domains/02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+      <li><a href="../../cheatsheets/exam-traps.html">Exam Traps</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

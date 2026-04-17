@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S3 Storage Classes — SAP-C02</title>
+  <link rel="stylesheet" href="../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../services/networking/transit-gateway.html">Services</a>
+    <a href="../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="exam-traps.html" class="active">Cheatsheets</a>
+    <a href="../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../index.html">Home</a><span>/</span>
+    <a href="../index.html#cheatsheets">Cheatsheets</a><span>/</span>
+    <span>S3 Storage Classes</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-cheat">Cheatsheet</div>
+    <h1>S3 Storage Class Decision Tree</h1>
+    <p class="subtitle">Pick the right storage class; know the minimum durations, retrieval times, and cost traps</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Quick Reference</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Storage Class</th><th>Retrieval</th><th>Min Duration</th><th>Min Size</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>S3 Standard</strong></td><td>Instant</td><td>None</td><td>None</td><td>Frequently accessed data</td></tr>
+      <tr><td><strong>S3 Standard-IA</strong></td><td>Instant</td><td>30 days</td><td>128 KB</td><td>Infrequent access; disaster recovery copies</td></tr>
+      <tr><td><strong>S3 One Zone-IA</strong></td><td>Instant</td><td>30 days</td><td>128 KB</td><td>Infrequent, re-creatable data; 20% cheaper than Standard-IA</td></tr>
+      <tr><td><strong>S3 Intelligent-Tiering</strong></td><td>Instant (frequent/infrequent tiers); minutes (archive tiers)</td><td>None</td><td>None (monitoring fee applies)</td><td>Unknown or changing access patterns</td></tr>
+      <tr><td><strong>Glacier Instant Retrieval</strong></td><td>Instant (ms)</td><td>90 days</td><td>128 KB</td><td>Archives accessed roughly once per quarter</td></tr>
+      <tr><td><strong>Glacier Flexible Retrieval</strong></td><td>Minutes – 12 hours</td><td>90 days</td><td>40 KB</td><td>Archives; bulk expedited options; no instant need</td></tr>
+      <tr><td><strong>Glacier Deep Archive</strong></td><td>12 – 48 hours</td><td>180 days</td><td>40 KB</td><td>7–10 year compliance archives; lowest cost storage</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Decision Tree</h2>
+  <pre>How often is this data accessed?
+
+  Frequently (daily/weekly)
+    → S3 Standard
+
+  Infrequently (monthly)
+    → Need instant retrieval?
+        Yes → S3 Standard-IA  (or One Zone-IA if data is re-creatable)
+        No  → Glacier Instant Retrieval (quarterly access pattern)
+
+  Rarely / Archive
+    → Can you wait minutes to hours?
+        Yes → Glacier Flexible Retrieval
+        No  → Glacier Instant Retrieval
+
+  Long-term compliance (7+ years), hours of retrieval acceptable
+    → Glacier Deep Archive
+
+  Access pattern unknown or varies over time
+    → S3 Intelligent-Tiering</pre>
+
+  <h2>Lifecycle Policy Example</h2>
+  <pre>Day 0    → S3 Standard          (active data)
+Day 30   → S3 Standard-IA       (cooling off)
+Day 90   → Glacier Flexible     (archive)
+Day 365  → Glacier Deep Archive (long-term)
+Day 2555 → Expire / delete      (7-year retention met)</pre>
+
+  <h2>Key Rules</h2>
+  <ul>
+    <li>Minimum storage duration is charged even if you delete the object earlier</li>
+    <li>Standard-IA and One Zone-IA have a per-GB retrieval fee on top of storage — not suitable for frequent access</li>
+    <li>Intelligent-Tiering: per-object monitoring fee (~$0.0025 / 1,000 objects/month); objects &lt; 128 KB are never moved out of frequent tier — makes it uneconomical for small objects</li>
+    <li>Cannot transition FROM Glacier back to Standard via lifecycle — restore to a temporary Standard copy first</li>
+    <li>One Zone-IA: single AZ — 20% cheaper but risk of permanent data loss if that AZ fails</li>
+  </ul>
+
+  <h2>S3 Object Lock (WORM)</h2>
+  <ul>
+    <li><strong>Governance mode</strong>: objects protected; users with <code>s3:BypassGovernanceRetention</code> permission can override</li>
+    <li><strong>Compliance mode</strong>: <em>no one</em>, including root, can delete before retention period expires</li>
+    <li>Use for: SEC Rule 17a-4, HIPAA, CJIS, financial services compliance</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Snowball / Snow device data lands in <strong>S3 Standard only</strong> — add a lifecycle policy if Glacier pricing is needed</li>
+      <li>S3 Intelligent-Tiering monitoring fee makes it uneconomical for objects &lt; 128 KB — they never move out of frequent tier anyway</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Quick Reference</a></li>
+      <li><a href="#">Decision Tree</a></li>
+      <li><a href="#">Lifecycle Example</a></li>
+      <li><a href="#">Key Rules</a></li>
+      <li><a href="#">Object Lock</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Cheatsheets</h4>
+    <ul>
+      <li><a href="vpc-connectivity-options.html">VPC Connectivity</a></li>
+      <li><a href="exam-traps.html">Exam Traps</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

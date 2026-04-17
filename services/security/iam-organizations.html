@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IAM &amp; Organizations — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="iam-organizations.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <span>Services / Security</span><span>/</span>
+    <span>IAM &amp; Organizations</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-sec">Security</div>
+    <h1>IAM, Organizations &amp; SCPs</h1>
+    <p class="subtitle">Policy evaluation logic, SCP patterns with examples, permission boundaries, Identity Center</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>IAM Policy Evaluation Logic</h2>
+  <p>Evaluated in order — an explicit Deny at any layer wins:</p>
+  <ol>
+    <li><strong>Explicit Deny</strong> — in any attached policy; always wins</li>
+    <li><strong>SCP Allow</strong> — must allow if SCPs are applied to the account</li>
+    <li><strong>Resource-based policy Allow</strong> — can grant cross-account access without role assumption</li>
+    <li><strong>Identity-based policy Allow</strong> — must be present</li>
+    <li><strong>Permission Boundary Allow</strong> — must allow if a boundary is set on the principal</li>
+    <li><strong>Session Policy Allow</strong> — must allow if using <code>sts:AssumeRole</code> with an inline session policy</li>
+  </ol>
+  <p>Default is <strong>implicit Deny</strong>. An action is allowed only if every applicable layer permits it and none deny it.</p>
+
+  <h3>Cross-Account Resource Access</h3>
+  <ul>
+    <li><strong>Role assumption</strong> — principal calls <code>sts:AssumeRole</code>; receives temporary credentials for target account</li>
+    <li><strong>Resource-based policy</strong> — target resource (S3, KMS, SNS, SQS, Lambda) grants access directly to source principal — no role switch needed</li>
+  </ul>
+
+  <h2>AWS Organizations Structure</h2>
+  <pre>Root
+└── Management Account
+    ├── OU: Security
+    │   ├── Log Archive Account
+    │   └── Security Tooling Account
+    ├── OU: Infrastructure
+    │   ├── Network Account
+    │   └── Shared Services Account
+    └── OU: Workloads
+        ├── OU: Prod
+        └── OU: Dev</pre>
+
+  <h2>Service Control Policies (SCPs)</h2>
+  <ul>
+    <li>Attached to root, OU, or individual account; children inherit from parents</li>
+    <li><strong>Management account is always exempt</strong> — SCPs never apply to it</li>
+    <li>SCPs do not grant permissions; they define the maximum allowed permissions</li>
+    <li>Service-linked roles are <strong>not restricted</strong> by SCPs</li>
+  </ul>
+
+  <h4>Deny actions outside approved regions</h4>
+  <pre>{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEquals": {
+      "aws:RequestedRegion": ["eu-west-1", "eu-west-2"]
+    }
+  }
+}</pre>
+
+  <h4>Prevent disabling CloudTrail</h4>
+  <pre>{
+  "Effect": "Deny",
+  "Action": ["cloudtrail:StopLogging", "cloudtrail:DeleteTrail"],
+  "Resource": "*"
+}</pre>
+
+  <h4>Require MFA for IAM and CloudTrail actions</h4>
+  <pre>{
+  "Effect": "Deny",
+  "Action": ["iam:*", "cloudtrail:*"],
+  "Resource": "*",
+  "Condition": {
+    "BoolIfExists": { "aws:MultiFactorAuthPresent": "false" }
+  }
+}</pre>
+
+  <h2>IAM Identity Center (SSO)</h2>
+  <ul>
+    <li>Centralised access management across all accounts in the organisation</li>
+    <li><strong>Permission Sets</strong> are deployed as IAM roles in each member account</li>
+    <li>Integrates with Managed AD, AD Connector, or external SAML 2.0 IdP</li>
+    <li>SCIM protocol for automated user provisioning from IdP</li>
+  </ul>
+
+  <h2>Permission Boundaries</h2>
+  <ul>
+    <li>An IAM managed policy attached to a user or role that caps their maximum permissions</li>
+    <li>Use case: allow developers to create IAM roles without enabling privilege escalation — the boundary ensures new roles cannot exceed the developer's own permissions</li>
+    <li>Boundary + identity policy: effective permissions = intersection of both</li>
+  </ul>
+
+  <div class="callout callout-tip">
+    <ul>
+      <li>SCP Allow at root + SCP Deny at OU = <strong>Deny wins</strong> for all accounts in that OU</li>
+      <li>If no SCP is attached to an account, the default is <strong>FullAWSAccess</strong> (implicit allow all at the SCP layer)</li>
+      <li><code>aws:PrincipalOrgID</code> condition key — restrict resource access to principals from your org only</li>
+      <li>Role chaining: max session duration is 1 hour regardless of individual role settings</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Policy Evaluation</a></li>
+      <li><a href="#">Org Structure</a></li>
+      <li><a href="#">SCPs</a></li>
+      <li><a href="#">Identity Center</a></li>
+      <li><a href="#">Permission Boundaries</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../../domains/01-organizational-complexity/index.html">Domain 1 — Org Complexity</a></li>
+      <li><a href="../../cheatsheets/exam-traps.html">Exam Traps</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

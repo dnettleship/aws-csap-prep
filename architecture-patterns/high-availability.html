@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High Availability Patterns — SAP-C02</title>
+  <link rel="stylesheet" href="../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../services/networking/transit-gateway.html">Services</a>
+    <a href="disaster-recovery.html" class="active">Patterns</a>
+    <a href="../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../index.html">Home</a><span>/</span>
+    <a href="../index.html#patterns">Patterns</a><span>/</span>
+    <span>High Availability</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-pattern">Architecture Pattern</div>
+    <h1>High Availability Patterns</h1>
+    <p class="subtitle">Multi-AZ architectures, load balancer selection, Auto Scaling policies, stateless design</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Core Principles</h2>
+  <ul>
+    <li>Eliminate single points of failure — redundancy at every tier</li>
+    <li>Design for failure — assume any component can fail at any time without warning</li>
+    <li>Decouple layers — failure in one tier must not cascade to others</li>
+    <li>Automate recovery — health checks, Auto Scaling, self-healing managed services</li>
+  </ul>
+
+  <h2>Multi-AZ vs Multi-Region</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Multi-AZ</th><th>Multi-Region</th></tr></thead>
+    <tbody>
+      <tr><td>Protects against</td><td>AZ outage (data center failure)</td><td>Regional outage</td></tr>
+      <tr><td>Latency</td><td>Low — same metro area</td><td>Higher — inter-region</td></tr>
+      <tr><td>Complexity</td><td>Low</td><td>High (data consistency, routing)</td></tr>
+      <tr><td>Cost</td><td>Low–moderate</td><td>High</td></tr>
+      <tr><td>Use for</td><td>Standard HA (99.9%+)</td><td>DR, global applications, data sovereignty</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Load Balancer Selection</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Load Balancer</th><th>Layer</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ALB</strong></td><td>L7 — HTTP/S, WebSocket, gRPC</td><td>Web apps, microservices, path/host/header routing, Lambda targets</td></tr>
+      <tr><td><strong>NLB</strong></td><td>L4 — TCP/UDP/TLS</td><td>Ultra-low latency, static IP, PrivateLink service endpoints, millions req/s</td></tr>
+      <tr><td><strong>GLB</strong></td><td>L3 — IP</td><td>Inline security appliances (IDS/IPS, firewalls) using GENEVE encapsulation</td></tr>
+      <tr><td><strong>CLB</strong></td><td>L4/L7</td><td>Legacy only — do not use for new workloads</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Auto Scaling Policies</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Policy</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Target Tracking</strong></td><td>Steady-state workloads; simplest to configure; e.g., keep CPU at 60%</td></tr>
+      <tr><td><strong>Step Scaling</strong></td><td>Respond with different magnitudes to different alarm thresholds</td></tr>
+      <tr><td><strong>Scheduled Scaling</strong></td><td>Predictable peaks — pre-scale the group before demand hits (eliminates warmup lag)</td></tr>
+      <tr><td><strong>Predictive Scaling</strong></td><td>ML-based forecast; pre-scales based on historical patterns; best combined with Target Tracking</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Stateless vs Stateful Design</h2>
+  <ul>
+    <li>Make web and app tiers <strong>stateless</strong>: store session state externally in ElastiCache (Redis) or DynamoDB</li>
+    <li>Stateless instances can be terminated and replaced without data loss — enables clean Auto Scaling</li>
+    <li>ALB sticky sessions (session affinity) are an HA anti-pattern — avoid unless the application absolutely requires it</li>
+  </ul>
+
+  <h2>Health Checks</h2>
+  <ul>
+    <li><strong>ALB health checks</strong>: HTTP/HTTPS to target; unhealthy targets removed from rotation immediately</li>
+    <li><strong>Auto Scaling</strong>: default EC2 status checks; upgrade to ELB health checks for more thorough application-level checking</li>
+    <li><strong>Route 53 health checks</strong>: endpoint polling; used with failover routing to detect regional failures</li>
+  </ul>
+
+  <h2>Reference Architectures</h2>
+
+  <h3>Standard 3-Tier Web App (Multi-AZ)</h3>
+  <pre>Route 53 (failover / latency routing)
+  → CloudFront (optional edge caching)
+    → ALB (multi-AZ, managed HA)
+      → EC2 Auto Scaling Group (min 2 AZs)
+        → RDS Aurora Multi-AZ  (or Aurora Global for multi-region)
+        → ElastiCache Redis (Multi-AZ, automatic failover)</pre>
+
+  <h3>Serverless HA</h3>
+  <pre>Route 53 / CloudFront
+  → API Gateway (regional, inherently multi-AZ)
+    → Lambda (AWS-managed multi-AZ, 1,000 concurrent default)
+      → DynamoDB (multi-AZ by default; Global Tables for multi-region)</pre>
+
+  <h2>Decoupling for Resilience</h2>
+  <ul>
+    <li><strong>SQS</strong>: buffer between producer and consumer; consumer failure doesn't affect producer; DLQ captures unprocessable messages</li>
+    <li><strong>SNS fan-out</strong>: one event triggers multiple consumers in parallel; each consumer fails independently</li>
+    <li><strong>EventBridge</strong>: loose coupling via events; producers and consumers have no direct dependency</li>
+  </ul>
+
+  <div class="callout callout-tip">
+    <ul>
+      <li>"Highly available" on the exam = survive an AZ failure at minimum</li>
+      <li>ALB + Auto Scaling Group across 2+ AZs is the canonical HA compute pattern</li>
+      <li>Lambda is inherently multi-AZ — no HA configuration needed</li>
+      <li>S3 provides 11-nines durability across 3 AZs by default — no HA configuration needed</li>
+      <li>ElastiCache Redis Multi-AZ: primary + replica in separate AZs; automatic failover in ~30–60s</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Core Principles</a></li>
+      <li><a href="#">Multi-AZ vs Multi-Region</a></li>
+      <li><a href="#">Load Balancers</a></li>
+      <li><a href="#">Auto Scaling</a></li>
+      <li><a href="#">Stateless Design</a></li>
+      <li><a href="#">Reference Architectures</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="disaster-recovery.html">Disaster Recovery</a></li>
+      <li><a href="../domains/02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

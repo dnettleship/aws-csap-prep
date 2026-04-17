@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VPC Connectivity Options — SAP-C02</title>
+  <link rel="stylesheet" href="../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../services/networking/transit-gateway.html">Services</a>
+    <a href="../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="exam-traps.html" class="active">Cheatsheets</a>
+    <a href="../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../index.html">Home</a><span>/</span>
+    <a href="../index.html#cheatsheets">Cheatsheets</a><span>/</span>
+    <span>VPC Connectivity</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-cheat">Cheatsheet</div>
+    <h1>VPC Connectivity Options</h1>
+    <p class="subtitle">On-premises to AWS, VPC-to-VPC, internet egress, and VPC endpoints compared</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>On-Premises to AWS</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Bandwidth</th><th>Latency</th><th>Encrypted</th><th>Setup</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Site-to-Site VPN</strong></td><td>Up to 1.25 Gbps</td><td>Variable (internet)</td><td>Yes (IPSec)</td><td>Hours</td><td>Low</td></tr>
+      <tr><td><strong>Client VPN</strong></td><td>Varies</td><td>Variable</td><td>Yes (TLS)</td><td>Hours</td><td>Per connection-hour</td></tr>
+      <tr><td><strong>Direct Connect 1G</strong></td><td>1 Gbps dedicated</td><td>Consistent, low</td><td>No *</td><td>Weeks</td><td>Moderate</td></tr>
+      <tr><td><strong>Direct Connect 10G</strong></td><td>10 Gbps dedicated</td><td>Consistent, low</td><td>No *</td><td>Weeks</td><td>High</td></tr>
+      <tr><td><strong>Direct Connect 100G</strong></td><td>100 Gbps dedicated</td><td>Consistent, low</td><td>MACsec available</td><td>Weeks</td><td>Very High</td></tr>
+    </tbody>
+  </table></div>
+  <p style="font-size:0.8rem;color:var(--text-muted)">* Add VPN over public VIF or MACsec for encryption over Direct Connect.</p>
+
+  <h2>VPC-to-VPC</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Transitive</th><th>Cross-Region</th><th>Cross-Account</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><strong>VPC Peering</strong></td><td>No</td><td>Yes</td><td>Yes</td><td>Per GB (cross-AZ/region)</td></tr>
+      <tr><td><strong>Transit Gateway</strong></td><td>Yes</td><td>Yes (TGW peering)</td><td>Yes (RAM)</td><td>Per attachment-hr + GB</td></tr>
+      <tr><td><strong>PrivateLink</strong></td><td>N/A</td><td>No</td><td>Yes</td><td>Per endpoint-hr + GB</td></tr>
+      <tr><td><strong>VPC Lattice</strong></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Per req + GB</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Internet Egress from VPC</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Direction</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Internet Gateway</strong></td><td>Inbound + Outbound</td><td>Public subnets only</td></tr>
+      <tr><td><strong>NAT Gateway</strong></td><td>Outbound only</td><td>Private subnets; managed; AZ-scoped; per-GB charge</td></tr>
+      <tr><td><strong>NAT Instance</strong></td><td>Outbound only</td><td>Self-managed; cheaper at low volume; can double as bastion</td></tr>
+      <tr><td><strong>Egress-Only IGW</strong></td><td>IPv6 outbound only</td><td>IPv6 equivalent of NAT Gateway</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>VPC Endpoints</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Services</th><th>Cost</th><th>How It Works</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Gateway Endpoint</strong></td><td>S3, DynamoDB</td><td><strong>Free</strong></td><td>Route table entry; no ENI; traffic stays on AWS network</td></tr>
+      <tr><td><strong>Interface Endpoint (PrivateLink)</strong></td><td>100+ AWS services</td><td>Per-hr + per-GB</td><td>Creates ENI in subnet; DNS resolves to private IP</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Use endpoint policies on gateway endpoints to restrict access (e.g., allow only specific S3 buckets)</li>
+    <li>Interface endpoints support DNS resolution from on-premises via Route 53 Resolver inbound endpoint</li>
+  </ul>
+
+  <h2>PrivateLink vs VPC Peering</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>PrivateLink</th><th>VPC Peering</th></tr></thead>
+    <tbody>
+      <tr><td>Direction</td><td>One-way (consumer → provider)</td><td>Bidirectional</td></tr>
+      <tr><td>CIDR overlap</td><td>Allowed</td><td>Not allowed — CIDRs must be unique</td></tr>
+      <tr><td>Transitive</td><td>No</td><td>No</td></tr>
+      <tr><td>Scale</td><td>Many consumers, one service endpoint</td><td>Point-to-point</td></tr>
+      <tr><td>Best for</td><td>Exposing a SaaS service to many consumers</td><td>Full VPC-to-VPC communication</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Key Routing Rules</h2>
+  <ul>
+    <li>Route tables are <strong>subnet-level</strong>, not VPC-level</li>
+    <li>More-specific routes win (longest prefix match)</li>
+    <li>VPC peering routes must be added <strong>manually</strong> to route tables in both VPCs</li>
+    <li>TGW route propagation is automatic when enabled on an attachment</li>
+    <li>NAT Gateway: one per AZ for HA — route each AZ's private subnet to its own NAT GW</li>
+  </ul>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">On-Prem to AWS</a></li>
+      <li><a href="#">VPC-to-VPC</a></li>
+      <li><a href="#">Internet Egress</a></li>
+      <li><a href="#">VPC Endpoints</a></li>
+      <li><a href="#">PrivateLink vs Peering</a></li>
+      <li><a href="#">Routing Rules</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../services/networking/transit-gateway.html">Transit Gateway</a></li>
+      <li><a href="../services/networking/direct-connect.html">Direct Connect</a></li>
+      <li><a href="exam-traps.html">Exam Traps</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

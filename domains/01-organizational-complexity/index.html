@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain 1: Organizational Complexity — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../01-organizational-complexity/index.html" class="active">Domains</a>
+    <a href="../../services/networking/transit-gateway.html">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#domains">Domains</a><span>/</span>
+    <span>Domain 1</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-d1">Domain 1 — 26%</div>
+    <h1>Design Solutions for Organizational Complexity</h1>
+    <p class="subtitle">Multi-account strategy, SCPs, Control Tower, cross-account networking and security</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Multi-Account Strategy</h2>
+  <ul>
+    <li><strong>AWS Organizations</strong> — management account, OUs, SCPs, consolidated billing</li>
+    <li><strong>AWS Control Tower</strong> — landing zone, guardrails (preventive vs. detective), Account Factory</li>
+    <li><strong>AWS IAM Identity Center (SSO)</strong> — centralised access across accounts via permission sets</li>
+    <li>Recommended account separation: security, log archive, network, shared services, workloads (dev/staging/prod)</li>
+  </ul>
+
+  <h2>Service Control Policies (SCPs)</h2>
+  <ul>
+    <li>SCPs are <strong>permission boundaries</strong> — they restrict what IAM can grant; they don't grant anything themselves</li>
+    <li>Applied at root, OU, or account level; inherited down the hierarchy</li>
+    <li>Management account is <strong>never</strong> restricted by SCPs</li>
+    <li>Service-linked roles are <strong>not restricted</strong> by SCPs</li>
+  </ul>
+
+  <h3>Common SCP Patterns</h3>
+  <h4>Deny actions outside approved regions</h4>
+  <pre>{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEquals": {
+      "aws:RequestedRegion": ["eu-west-1", "eu-west-2"]
+    }
+  }
+}</pre>
+
+  <h4>Prevent disabling CloudTrail</h4>
+  <pre>{
+  "Effect": "Deny",
+  "Action": ["cloudtrail:StopLogging", "cloudtrail:DeleteTrail"],
+  "Resource": "*"
+}</pre>
+
+  <h2>Cross-Account Access Patterns</h2>
+  <ul>
+    <li>IAM role assumption (<code>sts:AssumeRole</code>) — preferred over long-lived IAM users in each account</li>
+    <li>Resource-based policies (S3, KMS, SNS, SQS, Lambda) — allow cross-account without role switch</li>
+    <li><strong>AWS RAM</strong> — share VPCs, subnets, Transit Gateways, Route 53 Resolver rules across accounts</li>
+  </ul>
+
+  <h2>Centralised Logging &amp; Security</h2>
+  <ul>
+    <li><strong>CloudTrail</strong> — organisation trail logs all member accounts to central S3 bucket in log archive account</li>
+    <li><strong>AWS Config</strong> — aggregator collects compliance data from all accounts and regions</li>
+    <li><strong>Security Hub</strong> — aggregated findings via delegated admin; integrates GuardDuty, Inspector, Macie</li>
+    <li><strong>GuardDuty</strong> — organisation-level enablement; delegate admin to security tooling account</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <strong>Gotcha:</strong> GuardDuty findings in member accounts are visible in the <strong>delegated admin account</strong>, not the management account. These are different things.
+  </div>
+
+  <h2>Networking at Scale</h2>
+  <ul>
+    <li><strong>Transit Gateway</strong> — hub-and-spoke; replaces VPC peering mesh; transitive routing; share via RAM</li>
+    <li><strong>AWS Network Firewall</strong> — centralised deep packet inspection in a shared networking account</li>
+    <li><strong>VPC sharing via RAM</strong> — centralised VPC, spoke accounts deploy resources into shared subnets; owner controls routing</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Prevent member accounts from leaving the org</td><td>SCP: <code>Deny organizations:LeaveOrganization</code></td></tr>
+      <tr><td>Enforce CloudTrail cannot be disabled</td><td>SCP: <code>Deny cloudtrail:StopLogging</code></td></tr>
+      <tr><td>Single pane of glass for security findings</td><td>Security Hub with delegated admin in security account</td></tr>
+      <tr><td>Share a Transit Gateway across accounts</td><td>AWS RAM</td></tr>
+      <tr><td>Centralise DNS resolution across accounts</td><td>Route 53 Resolver + RAM-shared rules</td></tr>
+      <tr><td>Prevent resources outside approved regions</td><td>SCP Deny * + <code>StringNotEquals aws:RequestedRegion</code></td></tr>
+      <tr><td>Automate compliant new account provisioning</td><td>Control Tower Account Factory</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-tip">
+    <strong>Key services to know deeply:</strong> AWS Organizations, Control Tower, IAM Identity Center, AWS RAM, Transit Gateway, Security Hub, GuardDuty, AWS Config, Firewall Manager
+  </div>
+
+  </div><!-- /content-main -->
+
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#multi-account">Multi-Account Strategy</a></li>
+      <li><a href="#scps">SCPs</a></li>
+      <li><a href="#cross-account">Cross-Account Access</a></li>
+      <li><a href="#logging">Centralised Logging</a></li>
+      <li><a href="#networking">Networking at Scale</a></li>
+      <li><a href="#scenarios">Exam Scenarios</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Domains</h4>
+    <ul>
+      <li><a href="../02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+      <li><a href="../03-migration-modernization/index.html">Domain 3 — Migration</a></li>
+      <li><a href="../04-cost-performance/index.html">Domain 4 — Cost</a></li>
+    </ul>
+  </aside>
+  </div><!-- /content-layout -->
+</div>
+</body>
+</html>

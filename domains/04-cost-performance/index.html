@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain 4: Migration &amp; Modernization — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../01-organizational-complexity/index.html" class="active">Domains</a>
+    <a href="../../services/networking/transit-gateway.html">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#domains">Domains</a><span>/</span>
+    <span>Domain 4</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-d4">Domain 4 — 20%</div>
+    <h1>Accelerate Workload Migration and Modernization</h1>
+    <p class="subtitle">7 Rs, migration services, database migration patterns, modernisation, hybrid connectivity</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>The 7 Rs (Migration Strategies)</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Strategy</th><th>Description</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Retire</strong></td><td>Decommission the application</td><td>App no longer needed</td></tr>
+      <tr><td><strong>Retain</strong></td><td>Keep on-premises</td><td>Not ready to migrate; compliance constraints</td></tr>
+      <tr><td><strong>Rehost</strong></td><td>Lift-and-shift to EC2</td><td>Speed; minimal change; use AWS MGN</td></tr>
+      <tr><td><strong>Relocate</strong></td><td>Move without changes (VMware → VMware Cloud on AWS)</td><td>Existing VMware environments</td></tr>
+      <tr><td><strong>Replatform</strong></td><td>Lift-and-reshape (e.g., self-managed MySQL → RDS)</td><td>Small optimisations without rearchitecting</td></tr>
+      <tr><td><strong>Repurchase</strong></td><td>Move to SaaS (e.g., Salesforce, Workday)</td><td>Legacy on-prem → SaaS equivalent</td></tr>
+      <tr><td><strong>Refactor / Re-architect</strong></td><td>Redesign using cloud-native services</td><td>Maximum cloud benefit; highest effort</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>AWS Migration Services</h2>
+  <ul>
+    <li><strong>AWS MGN (Application Migration Service)</strong> — agent-based continuous block-level replication; near-zero cutover downtime; <em>replaces deprecated SMS</em></li>
+    <li><strong>AWS DMS (Database Migration Service)</strong> — homogeneous and heterogeneous DB migration; supports ongoing CDC replication</li>
+    <li><strong>AWS SCT (Schema Conversion Tool)</strong> — converts schema and stored procedures for heterogeneous migrations (e.g., Oracle → Aurora PostgreSQL)</li>
+    <li><strong>AWS DataSync</strong> — online file data transfer: NFS/SMB/HDFS → S3/EFS/FSx; scheduled or one-time</li>
+    <li><strong>AWS Snow family</strong> — offline transfer: Snowcone (8 TB), Snowball Edge (80 TB), Snowmobile (100 PB)</li>
+  </ul>
+
+  <h2>Database Migration Patterns</h2>
+  <ul>
+    <li><strong>Same engine</strong> (MySQL → RDS MySQL): DMS full load + CDC replication until cutover</li>
+    <li><strong>Different engine</strong> (Oracle → Aurora PostgreSQL): SCT first (schema + stored procedures), then DMS (data + CDC)</li>
+    <li><strong>Large databases</strong>: Snowball Edge for initial bulk load, then DMS CDC for delta replication</li>
+    <li><strong>Zero-downtime</strong>: keep DMS ongoing replication running until cutover window</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <strong>Key trap:</strong> DMS does <strong>not</strong> migrate stored procedures, triggers, or views automatically — use SCT for those. DataSync is for <strong>file</strong> data only, not databases.
+  </div>
+
+  <h2>Modernisation Patterns</h2>
+  <ul>
+    <li><strong>Strangler Fig</strong> — incrementally replace the monolith; use ALB path-based routing to divert specific endpoints to new microservices, leaving the rest to the monolith</li>
+    <li><strong>Microservices</strong> — decompose by bounded context; ECS/EKS + SQS/EventBridge for async communication</li>
+    <li><strong>Containerisation</strong> — AWS App2Container (A2C) for Java/.NET apps; outputs ECS/EKS task definitions automatically</li>
+    <li><strong>Serverless</strong> — move to Lambda for event-driven workloads; eliminate server management</li>
+  </ul>
+
+  <h2>Hybrid Connectivity</h2>
+  <ul>
+    <li><strong>Direct Connect</strong> — dedicated 1/10/100 Gbps; consistent bandwidth; not encrypted by default</li>
+    <li><strong>Direct Connect Gateway</strong> — single DX connection to multiple VPCs across multiple regions via Transit VIF</li>
+    <li><strong>Site-to-Site VPN</strong> — IPSec over internet; set up in hours; use as DX backup</li>
+    <li><strong>VPN over DX</strong> — adds IPSec encryption over the private DX connection (compliance requirement)</li>
+  </ul>
+
+  <h2>Migration Phases</h2>
+  <ol>
+    <li><strong>Assess</strong> — portfolio discovery, TCO analysis (Migration Evaluator), readiness assessment</li>
+    <li><strong>Mobilise</strong> — landing zone, migration factory setup, runbooks</li>
+    <li><strong>Migrate &amp; Modernise</strong> — execute migrations in waves, iterate</li>
+  </ol>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Fastest path to cloud, minimal changes</td><td>Rehost with AWS MGN</td></tr>
+      <tr><td>500 TB database, minimal downtime</td><td>Snowball Edge for bulk + DMS CDC for delta</td></tr>
+      <tr><td>Oracle → Aurora PostgreSQL</td><td>SCT (schema) + DMS (data + CDC)</td></tr>
+      <tr><td>Incrementally replace monolith, no big-bang</td><td>Strangler Fig + ALB path-based routing</td></tr>
+      <tr><td>Connect on-prem to VPCs in multiple regions</td><td>DX + Direct Connect Gateway + Transit Gateway</td></tr>
+      <tr><td>Encrypted traffic over Direct Connect</td><td>VPN over DX (IPSec over public VIF)</td></tr>
+      <tr><td>Migrate VMware, keep VMware tooling</td><td>Relocate → VMware Cloud on AWS</td></tr>
+    </tbody>
+  </table></div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">7 Rs</a></li>
+      <li><a href="#">Migration Services</a></li>
+      <li><a href="#">Database Migration</a></li>
+      <li><a href="#">Modernisation</a></li>
+      <li><a href="#">Hybrid Connectivity</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Domains</h4>
+    <ul>
+      <li><a href="../01-organizational-complexity/index.html">Domain 1 — Org Complexity</a></li>
+      <li><a href="../02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+      <li><a href="../03-migration-modernization/index.html">Domain 3 — Continuous Improvement</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudFront &amp; Global Accelerator — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>CloudFront &amp; Global Accelerator</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-net">Networking</div>
+    <h1>CloudFront &amp; Global Accelerator</h1>
+    <p class="subtitle">CDN caching, edge functions, origin failover, Anycast acceleration</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>CloudFront Fundamentals</h2>
+  <ul>
+    <li><strong>Edge Locations</strong> (~450+) cache content close to users; <strong>Regional Edge Caches</strong> sit between edge locations and origins</li>
+    <li>Supported origins: S3, ALB, EC2, API Gateway, any HTTP server; multiple origins per distribution</li>
+    <li>Reduces origin load and egress costs — data transfer from AWS origins to CloudFront is free; only edge-to-user charges apply</li>
+    <li><strong>Cache key</strong>: URL path + optional headers, cookies, query strings — configure with Cache Policies</li>
+  </ul>
+
+  <h2>Cache Control</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Mechanism</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TTL</strong></td><td>Default 86400s; origin <code>Cache-Control</code> header overrides; min/max TTL set in Cache Policy</td></tr>
+      <tr><td><strong>Invalidation</strong></td><td>Purge cached objects by path or wildcard (e.g. <code>/images/*</code>); first 1,000 paths/month free</td></tr>
+      <tr><td><strong>Versioned URLs</strong></td><td>Preferred over invalidations — change filename/query string to force new cache key</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Origin Failover</h2>
+  <ul>
+    <li>Configure an <strong>origin group</strong> with a primary and secondary origin</li>
+    <li>On 5xx or specified HTTP error codes from primary, CloudFront automatically retries against the secondary</li>
+    <li>Use for active-passive HA: S3 primary + S3 secondary in another region, or two ALBs</li>
+  </ul>
+
+  <h2>Security Features</h2>
+  <ul>
+    <li><strong>HTTPS</strong>: CloudFront terminates TLS at the edge; can enforce HTTPS-only and HTTP→HTTPS redirect</li>
+    <li><strong>AWS WAF</strong>: attach a Web ACL to a distribution for L7 filtering at the edge</li>
+    <li><strong>AWS Shield Standard</strong>: included automatically; Shield Advanced adds DDoS response team + cost protection</li>
+    <li><strong>Signed URLs / Signed Cookies</strong>: restrict access to authenticated users; signed URLs for single objects, signed cookies for multiple objects</li>
+    <li><strong>Origin Access Control (OAC)</strong>: replaces legacy OAI; allows CloudFront to access private S3 buckets without making them public</li>
+    <li><strong>Field-Level Encryption</strong>: encrypt specific POST fields at the edge using public key; decrypted only at origin</li>
+  </ul>
+
+  <h2>Lambda@Edge &amp; CloudFront Functions</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>CloudFront Functions</th><th>Lambda@Edge</th></tr></thead>
+    <tbody>
+      <tr><td>Runtime</td><td>JS (subset)</td><td>Node.js, Python</td></tr>
+      <tr><td>Triggers</td><td>Viewer request/response only</td><td>Viewer + origin request/response</td></tr>
+      <tr><td>Execution time</td><td>&lt; 1 ms</td><td>Up to 5s (viewer), 30s (origin)</td></tr>
+      <tr><td>Scale</td><td>Millions req/s</td><td>Thousands req/s</td></tr>
+      <tr><td>Use cases</td><td>URL rewrites, header manipulation, A/B testing</td><td>Auth, complex redirects, body modification</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Global Accelerator</h2>
+  <ul>
+    <li>Provides two <strong>static Anycast IPs</strong>; traffic enters the AWS network at the nearest edge PoP, then travels the private AWS backbone to the origin</li>
+    <li>Works at <strong>Layer 3/4</strong> (TCP/UDP) — not a CDN; does not cache content</li>
+    <li>Ideal for <strong>non-cacheable dynamic content</strong>: APIs, gaming, VoIP</li>
+    <li>Supports <strong>health checks + automatic failover</strong> between endpoints across regions</li>
+    <li>Weighted traffic dials: shift traffic percentage between endpoints for canary or blue/green</li>
+    <li>Also supports <strong>client affinity</strong>: route the same client IP to the same endpoint consistently</li>
+  </ul>
+
+  <h2>CloudFront vs Global Accelerator</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>CloudFront</th><th>Global Accelerator</th></tr></thead>
+    <tbody>
+      <tr><td>Protocol</td><td>HTTP/S, WebSocket</td><td>TCP, UDP (any protocol)</td></tr>
+      <tr><td>Caching</td><td>Yes — reduces origin load</td><td>No — all requests hit the origin</td></tr>
+      <tr><td>Best for</td><td>Static assets, cacheable API responses, video streaming</td><td>Non-cacheable APIs, gaming, IoT, VoIP</td></tr>
+      <tr><td>Edge functions</td><td>CloudFront Functions, Lambda@Edge</td><td>No</td></tr>
+      <tr><td>Static IPs</td><td>No — DNS-based</td><td>Yes — two static Anycast IPs</td></tr>
+      <tr><td>WAF integration</td><td>Yes</td><td>No</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Serve private S3 content through CloudFront without making bucket public</td><td>Origin Access Control (OAC) + bucket policy</td></tr>
+      <tr><td>Reduce global API latency, responses are not cacheable</td><td>Global Accelerator</td></tr>
+      <tr><td>Block malicious IPs at the CDN edge</td><td>CloudFront + AWS WAF Web ACL</td></tr>
+      <tr><td>Automatic failover if primary S3 origin returns errors</td><td>CloudFront origin group with secondary origin</td></tr>
+      <tr><td>Run auth logic (JWT validation) before CloudFront forwards to origin</td><td>Lambda@Edge on viewer request</td></tr>
+      <tr><td>App must have fixed IPs for firewall whitelisting + global low latency</td><td>Global Accelerator (provides static Anycast IPs)</td></tr>
+      <tr><td>Reduce S3 data transfer costs for global static asset delivery</td><td>CloudFront — origin-to-edge transfer is free</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>CloudFront caches at the <strong>edge</strong> — use invalidations sparingly; versioned file names are preferred</li>
+      <li>Global Accelerator does <strong>not cache</strong> — every request reaches the origin</li>
+      <li>OAC replaces OAI for new distributions; OAI is legacy but still on the exam</li>
+      <li>Lambda@Edge runs in all edge locations globally — it cannot access VPC resources or use environment variables in the same way as regular Lambda</li>
+      <li>CloudFront signed URLs expire — not suitable for long-lived public asset delivery; use only for time-limited private access</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">CloudFront Fundamentals</a></li>
+      <li><a href="#">Cache Control</a></li>
+      <li><a href="#">Origin Failover</a></li>
+      <li><a href="#">Security</a></li>
+      <li><a href="#">Lambda@Edge</a></li>
+      <li><a href="#">Global Accelerator</a></li>
+      <li><a href="#">CF vs GA</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="route53.html">Route 53</a></li>
+      <li><a href="../../architecture-patterns/high-availability.html">High Availability</a></li>
+      <li><a href="../../architecture-patterns/disaster-recovery.html">Disaster Recovery</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

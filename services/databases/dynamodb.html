@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DynamoDB — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="aurora.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>DynamoDB</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-db">Databases</div>
+    <h1>Amazon DynamoDB</h1>
+    <p class="subtitle">Key-value &amp; document store, indexes, DAX, Global Tables, Streams, capacity planning</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Data Model</h2>
+  <ul>
+    <li><strong>Partition key (PK)</strong> — required; determines physical partition; must be unique per item (when no sort key)</li>
+    <li><strong>Sort key (SK)</strong> — optional; combined with PK forms a composite primary key; enables range queries within a partition</li>
+    <li><strong>Item</strong> — a row; up to 400 KB; attributes are schema-free except for primary key</li>
+    <li><strong>Hot partition</strong> — if all reads/writes hit one PK value, throughput is limited to that partition's capacity; design for uniform distribution</li>
+  </ul>
+
+  <h2>Capacity Modes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>On-Demand</th><th>Provisioned</th></tr></thead>
+    <tbody>
+      <tr><td>Billing</td><td>Pay per request (RRU/WRU)</td><td>Pay per RCU/WCU reserved</td></tr>
+      <tr><td>Scaling</td><td>Instant; no capacity planning</td><td>Auto Scaling or manual; can be throttled</td></tr>
+      <tr><td>Best for</td><td>Unpredictable, spiky, new workloads</td><td>Stable, predictable workloads; lower cost</td></tr>
+      <tr><td>Switch</td><td colspan="2">Can switch modes once per 24 hours</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Read Consistency</h2>
+  <ul>
+    <li><strong>Eventually consistent reads</strong> (default) — reads may return stale data for up to ~1 second; consumes 0.5 RCU per 4 KB</li>
+    <li><strong>Strongly consistent reads</strong> — always returns the latest data; consumes 1 RCU per 4 KB; higher latency; not available on GSIs</li>
+    <li><strong>Transactional reads</strong> (TransactGetItems) — consumes 2 RCUs per 4 KB; all-or-nothing across up to 25 items</li>
+  </ul>
+
+  <h2>Indexes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Local Secondary Index (LSI)</th><th>Global Secondary Index (GSI)</th></tr></thead>
+    <tbody>
+      <tr><td>Created</td><td>At table creation only</td><td>Any time</td></tr>
+      <tr><td>Partition key</td><td>Same as base table</td><td>Any attribute</td></tr>
+      <tr><td>Sort key</td><td>Different attribute</td><td>Any attribute (optional)</td></tr>
+      <tr><td>Consistency</td><td>Strongly or eventually consistent</td><td>Eventually consistent only</td></tr>
+      <tr><td>Capacity</td><td>Shares table capacity</td><td>Own provisioned RCU/WCU</td></tr>
+      <tr><td>Limit</td><td>5 per table</td><td>20 per table</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>DynamoDB Accelerator (DAX)</h2>
+  <ul>
+    <li>In-memory cache purpose-built for DynamoDB; fully API-compatible — change endpoint, not code</li>
+    <li>Reduces read latency from milliseconds to <strong>microseconds</strong></li>
+    <li>Deployed in a VPC; Multi-AZ cluster with primary + replica nodes</li>
+    <li>Item cache (individual item reads) + query cache (Query/Scan results)</li>
+    <li><strong>Not suitable</strong> for strongly consistent reads (DAX caches eventually-consistent data) or write-heavy workloads</li>
+  </ul>
+
+  <h2>DynamoDB Streams</h2>
+  <ul>
+    <li>Ordered log of item-level changes (create, update, delete) in a table; retained 24 hours</li>
+    <li>Stream record can contain: keys only, new image, old image, or both images</li>
+    <li>Common pattern: Streams → Lambda for event-driven processing, change data capture, cross-region replication (before Global Tables)</li>
+    <li>Kinesis Data Streams for DynamoDB: alternative to native Streams; retains data up to 1 year</li>
+  </ul>
+
+  <h2>Global Tables</h2>
+  <ul>
+    <li>Multi-region, multi-active replication — reads and writes in each region</li>
+    <li>Conflict resolution: <strong>last-writer-wins</strong> based on timestamp — design for idempotency</li>
+    <li>Requires on-demand capacity or provisioned with Auto Scaling enabled</li>
+    <li>Replication latency typically sub-second</li>
+    <li>Use for: global applications requiring local latency + regional failover with near-zero RPO</li>
+  </ul>
+
+  <h2>Other Key Features</h2>
+  <ul>
+    <li><strong>TTL (Time to Live)</strong> — set an expiry epoch timestamp attribute; DynamoDB deletes expired items automatically within 48 hours; no capacity consumed</li>
+    <li><strong>Point-in-Time Recovery (PITR)</strong> — continuous backups for 35 days; restore to any second in the window</li>
+    <li><strong>Transactions</strong> — TransactWriteItems / TransactGetItems for ACID operations across up to 25 items in one or more tables</li>
+    <li><strong>Conditional writes</strong> — optimistic locking; only write if condition is met (e.g. attribute doesn't exist)</li>
+    <li><strong>Encryption at rest</strong> — enabled by default with AWS-owned keys; can use KMS CMK</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Reduce DynamoDB read latency to microseconds for hot items</td><td>DynamoDB DAX</td></tr>
+      <tr><td>Query items by an attribute that is not the primary key</td><td>GSI (create at any time) or LSI (sort key variant, at table creation)</td></tr>
+      <tr><td>Trigger a Lambda when an item is updated</td><td>DynamoDB Streams → Lambda event source mapping</td></tr>
+      <tr><td>Multi-region active-active writes with low latency globally</td><td>DynamoDB Global Tables</td></tr>
+      <tr><td>Auto-expire session data after 24 hours</td><td>TTL attribute on items</td></tr>
+      <tr><td>Unpredictable spiky traffic, no capacity planning</td><td>On-demand capacity mode</td></tr>
+      <tr><td>Atomic counter that increments without race conditions</td><td>Atomic counter with UpdateItem</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>GSIs support <strong>eventually consistent reads only</strong> — cannot use strongly consistent reads on a GSI</li>
+      <li>LSIs must be created <strong>at table creation</strong> — cannot add them later</li>
+      <li>DynamoDB Global Tables conflict resolution is <strong>last-writer-wins</strong> — not suitable for debit/credit operations without application-level conflict handling</li>
+      <li>DAX is <strong>not</strong> suitable for applications that require strongly consistent reads — it returns cached (eventually consistent) data</li>
+      <li>Hot partitions occur when partition key has low cardinality — e.g. using a boolean or timestamp as PK concentrates load</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Data Model</a></li>
+      <li><a href="#">Capacity Modes</a></li>
+      <li><a href="#">Read Consistency</a></li>
+      <li><a href="#">Indexes</a></li>
+      <li><a href="#">DAX</a></li>
+      <li><a href="#">Streams</a></li>
+      <li><a href="#">Global Tables</a></li>
+      <li><a href="#">Exam Scenarios</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="aurora.html">Aurora</a></li>
+      <li><a href="../databases/elasticache.html">ElastiCache</a></li>
+      <li><a href="../../architecture-patterns/disaster-recovery.html">Disaster Recovery</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

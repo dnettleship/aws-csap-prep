@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain 2: New Solutions — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../01-organizational-complexity/index.html" class="active">Domains</a>
+    <a href="../../services/networking/transit-gateway.html">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#domains">Domains</a><span>/</span>
+    <span>Domain 2</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-d2">Domain 2 — 29%</div>
+    <h1>Design for New Solutions</h1>
+    <p class="subtitle">Highest-weighted domain — compute, storage, databases, decoupling, security, HA design</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Compute Strategy</h2>
+  <ul>
+    <li><strong>EC2</strong>: placement groups (cluster/spread/partition), instance types, launch templates</li>
+    <li><strong>ECS vs EKS</strong>: ECS is AWS-native and simpler; EKS when Kubernetes portability or ecosystem is needed</li>
+    <li><strong>Lambda</strong>: event-driven, max 15 min, 10 GB memory; ideal for async/decoupled patterns</li>
+    <li><strong>Fargate</strong>: serverless containers; no node management; use to avoid EC2 operational overhead</li>
+  </ul>
+
+  <h2>Storage Design</h2>
+  <ul>
+    <li><strong>S3</strong>: storage classes (Standard → IA → Glacier Instant/Flexible/Deep Archive), lifecycle policies, Object Lock (WORM), Replication (SRR/CRR)</li>
+    <li><strong>EFS</strong>: shared POSIX filesystem; multi-AZ; use for shared state across EC2/ECS/Lambda</li>
+    <li><strong>FSx</strong>: FSx for Windows (SMB/AD), FSx for Lustre (HPC/ML), FSx for NetApp ONTAP</li>
+    <li><strong>EBS</strong>: gp3 default; io2 Block Express for sub-ms latency; snapshots cross-region</li>
+  </ul>
+
+  <h2>Database Selection</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Workload</th><th>Service</th></tr></thead>
+    <tbody>
+      <tr><td>Relational, managed</td><td>RDS (MySQL/PostgreSQL/Oracle/MSSQL)</td></tr>
+      <tr><td>High-throughput relational</td><td>Aurora (5× MySQL, 3× PostgreSQL throughput)</td></tr>
+      <tr><td>Global relational</td><td>Aurora Global Database (&lt; 1s replication)</td></tr>
+      <tr><td>Key-value / low-latency</td><td>DynamoDB</td></tr>
+      <tr><td>Global key-value</td><td>DynamoDB Global Tables</td></tr>
+      <tr><td>In-memory cache</td><td>ElastiCache (Redis for persistence/pub-sub, Memcached for simple cache)</td></tr>
+      <tr><td>Data warehouse</td><td>Redshift</td></tr>
+      <tr><td>Search</td><td>OpenSearch Service</td></tr>
+      <tr><td>Time-series</td><td>Amazon Timestream</td></tr>
+      <tr><td>Graph</td><td>Neptune</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Decoupling &amp; Async Patterns</h2>
+  <ul>
+    <li><strong>SQS</strong>: pull-based, up to 14-day retention; Standard (at-least-once) vs FIFO (exactly-once, 3,000 TPS with batching)</li>
+    <li><strong>SNS</strong>: push/fan-out to SQS, Lambda, HTTP, email; filter policies reduce noise</li>
+    <li><strong>EventBridge</strong>: event bus with rules; use for SaaS integrations, cross-account events, and dynamic routing</li>
+    <li><strong>Kinesis Data Streams</strong>: real-time, ordered per shard, replay up to 365 days</li>
+    <li><strong>Kinesis Firehose</strong>: managed delivery to S3/Redshift/OpenSearch; no replay</li>
+  </ul>
+
+  <h2>Security Architecture</h2>
+  <ul>
+    <li><strong>KMS</strong>: key policy AND IAM policy both required for access; customer-managed CMKs for fine-grained control</li>
+    <li><strong>Secrets Manager</strong>: automatic rotation; use over Parameter Store when rotation is required</li>
+    <li><strong>Parameter Store</strong>: SecureString (KMS-encrypted); cheaper for static config/secrets</li>
+    <li><strong>ACM</strong>: managed TLS certificates; free for ALB/CloudFront; cannot export private key</li>
+    <li><strong>WAF</strong>: L7 rules on CloudFront, ALB, API Gateway; managed rule groups for OWASP top 10</li>
+  </ul>
+
+  <h2>High Availability Design</h2>
+  <ul>
+    <li>Multi-AZ for stateful services (RDS Multi-AZ, EFS, ALB)</li>
+    <li>Multi-region for DR (pilot light, warm standby, active-active)</li>
+    <li>Auto Scaling: target tracking preferred for steady-state; scheduled for predictable peaks</li>
+    <li>ALB &gt; NLB for HTTP/S; NLB for ultra-low latency or static IP; GLB for inline security appliances</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Decouple producer/consumer with guaranteed ordering</td><td>SQS FIFO</td></tr>
+      <tr><td>Fan-out to multiple SQS queues</td><td>SNS → multiple SQS subscriptions</td></tr>
+      <tr><td>Real-time clickstream ingestion</td><td>Kinesis Data Streams → Lambda/Kinesis Analytics</td></tr>
+      <tr><td>Auto-rotate database passwords</td><td>Secrets Manager with RDS rotation</td></tr>
+      <tr><td>Protect API Gateway from SQL injection</td><td>WAF with managed rule group</td></tr>
+      <tr><td>Serverless event-driven architecture</td><td>Lambda + EventBridge + SQS/SNS</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>SQS FIFO max 3,000 TPS with batching (300 without) — use Standard + idempotency for higher throughput</li>
+      <li>RDS Multi-AZ standby is <strong>not readable</strong> — it's for failover only</li>
+      <li>Aurora Serverless v2 does <strong>not</strong> scale to zero — use v1 if zero-scale is required</li>
+      <li>ElastiCache Redis cluster mode: data sharded across nodes; non-cluster: single shard with replicas</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Compute</a></li>
+      <li><a href="#">Storage</a></li>
+      <li><a href="#">Databases</a></li>
+      <li><a href="#">Decoupling</a></li>
+      <li><a href="#">Security</a></li>
+      <li><a href="#">HA Design</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Domains</h4>
+    <ul>
+      <li><a href="../01-organizational-complexity/index.html">Domain 1 — Org Complexity</a></li>
+      <li><a href="../03-migration-modernization/index.html">Domain 3 — Migration</a></li>
+      <li><a href="../04-cost-performance/index.html">Domain 4 — Cost</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

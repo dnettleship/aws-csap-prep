@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Traps — SAP-C02</title>
+  <link rel="stylesheet" href="../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../services/networking/transit-gateway.html">Services</a>
+    <a href="../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="exam-traps.html" class="active">Cheatsheets</a>
+    <a href="../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../index.html">Home</a><span>/</span>
+    <a href="../index.html#cheatsheets">Cheatsheets</a><span>/</span>
+    <span>Exam Traps</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-cheat">Cheatsheet</div>
+    <h1>Common Exam Traps</h1>
+    <p class="subtitle">30+ gotchas that the SAP-C02 uses as distractors — read these before your exam</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>IAM &amp; Security</h2>
+  <ul class="trap-list">
+    <li><strong>SCPs don't apply to the management account</strong> — even a Deny at root doesn't affect it</li>
+    <li><strong>SCPs don't grant permissions</strong> — they only restrict; you still need IAM policies to allow actions</li>
+    <li><strong>Resource-based policies can grant cross-account access without role assumption</strong> — an S3 bucket policy granting another account access means no role switch is needed</li>
+    <li><strong>KMS: key policy AND IAM policy must both allow</strong> — even if IAM permits <code>kms:Decrypt</code>, the key policy must also allow it</li>
+    <li><strong>Secrets Manager vs Parameter Store</strong> — Secrets Manager for automatic rotation; Parameter Store for static config/secrets</li>
+    <li><strong>Cognito User Pools vs Identity Pools</strong> — User Pools = authentication (who you are); Identity Pools = exchange OIDC/SAML token for AWS credentials</li>
+  </ul>
+
+  <h2>Networking</h2>
+  <ul class="trap-list">
+    <li><strong>VPC peering is non-transitive</strong> — A↔B and B↔C does not enable A↔C; use Transit Gateway for transitive routing</li>
+    <li><strong>Direct Connect is not encrypted</strong> — it's a private wire, not cryptographically protected; add VPN or MACsec for encryption</li>
+    <li><strong>Security Groups are stateful; NACLs are stateless</strong> — SG return traffic is automatically allowed; NACLs need explicit rules for both directions</li>
+    <li><strong>NACLs evaluate rules in numerical order; first match wins</strong> — lower rule number takes precedence</li>
+    <li><strong>NAT Gateway is AZ-specific</strong> — create one per AZ for HA; each AZ's private subnets should route to their own NAT GW</li>
+    <li><strong>VPC Gateway Endpoints for S3 and DynamoDB are free</strong> — interface endpoints cost money; gateway endpoints don't</li>
+  </ul>
+
+  <h2>Compute</h2>
+  <ul class="trap-list">
+    <li><strong>Spot interruption gives a 2-minute warning</strong> — not immediate; use this window to checkpoint state or drain connections</li>
+    <li><strong>Lambda maximum execution time is 15 minutes</strong> — not suitable for long-running jobs; use ECS/Fargate or Step Functions</li>
+    <li><strong>Lambda concurrent executions default limit is 1,000 per region</strong> — soft limit; can be increased; applies across all functions in the region</li>
+    <li><strong>EC2 Auto Scaling default cooldown is 300 seconds</strong> — prevents rapid scale-in/out; Target Tracking manages its own scale-in cooldown</li>
+  </ul>
+
+  <h2>Storage &amp; Databases</h2>
+  <ul class="trap-list">
+    <li><strong>RDS Multi-AZ standby is NOT readable</strong> — it exists for failover only; use read replicas for read scaling</li>
+    <li><strong>Aurora read replicas ARE automatic failover targets</strong> — they serve reads AND replace the primary on failure (unlike RDS read replicas)</li>
+    <li><strong>S3 is strongly consistent since December 2020</strong> — the old "eventual consistency for overwrites" trap is outdated</li>
+    <li><strong>DynamoDB hot partition</strong> — design partition keys for uniform distribution; sequential IDs (e.g., timestamps) concentrate load on one partition</li>
+    <li><strong>ElastiCache Redis vs Memcached</strong> — Redis: persistence, replication, pub/sub, sorted sets; Memcached: simple multi-threaded cache, no persistence</li>
+  </ul>
+
+  <h2>Migration</h2>
+  <ul class="trap-list">
+    <li><strong>AWS MGN replaces SMS</strong> — Server Migration Service (SMS) is deprecated; use MGN for all lift-and-shift migrations</li>
+    <li><strong>DMS doesn't migrate stored procedures, triggers, or views</strong> — use SCT for schema and code conversion</li>
+    <li><strong>DataSync is for file and object data, not databases</strong> — use DMS for database migrations</li>
+    <li><strong>Snowball data lands in S3 Standard</strong> — add a lifecycle policy if Glacier storage pricing is needed</li>
+  </ul>
+
+  <h2>Cost</h2>
+  <ul class="trap-list">
+    <li><strong>Reserved Instances cannot be cancelled</strong> — standard RIs can be sold on the RI Marketplace; convertible RIs cannot</li>
+    <li><strong>Compute Savings Plans are more flexible than EC2 Instance Savings Plans</strong> — but have a lower maximum discount ceiling</li>
+    <li><strong>S3 Intelligent-Tiering has a per-object monitoring fee</strong> — not cost-effective for objects under 128 KB</li>
+    <li><strong>Data transfer into AWS is always free</strong> — only egress to the internet is charged</li>
+  </ul>
+
+  <h2>High Availability</h2>
+  <ul class="trap-list">
+    <li><strong>"Highly available" on the exam means survive an AZ failure</strong> — minimum two AZs; multi-region is a DR concern</li>
+    <li><strong>Multi-AZ ≠ Multi-Region</strong> — Multi-AZ protects against AZ failure; multi-region protects against regional failure</li>
+    <li><strong>ALB is inherently multi-AZ</strong> — you don't configure HA for ALB; AWS manages it</li>
+  </ul>
+
+  <h2>Common Distractors</h2>
+  <ul class="trap-list distractor">
+    <li><strong>"Most cost-effective" + "highly available"</strong> → Reserved/Savings Plans + Multi-AZ managed services</li>
+    <li><strong>"Regulatory/compliance" + "encryption in transit" over Direct Connect</strong> → VPN over DX (IPSec), not just DX alone</li>
+    <li><strong>"Existing VMware" on-premises</strong> → VMware Cloud on AWS (Relocate strategy)</li>
+    <li><strong>"Minimal downtime" server migration</strong> → AWS MGN (continuous replication, near-zero cutover window)</li>
+    <li><strong>"Petabytes" of data to transfer</strong> → AWS Snowball Edge / Snowmobile, not DataSync over the network</li>
+  </ul>
+
+  </div>
+  <aside class="sidebar">
+    <h4>Sections</h4>
+    <ul>
+      <li><a href="#">IAM &amp; Security</a></li>
+      <li><a href="#">Networking</a></li>
+      <li><a href="#">Compute</a></li>
+      <li><a href="#">Storage &amp; DBs</a></li>
+      <li><a href="#">Migration</a></li>
+      <li><a href="#">Cost</a></li>
+      <li><a href="#">HA</a></li>
+      <li><a href="#">Distractors</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Cheatsheets</h4>
+    <ul>
+      <li><a href="storage-class-decision-tree.html">S3 Storage Classes</a></li>
+      <li><a href="vpc-connectivity-options.html">VPC Connectivity</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Direct Connect — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="direct-connect.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <span>Services / Networking</span><span>/</span>
+    <span>Direct Connect</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-net">Networking</div>
+    <h1>AWS Direct Connect</h1>
+    <p class="subtitle">Dedicated private connection from on-premises to AWS — consistent bandwidth, lower latency</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Connection Types</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Speed</th><th>Setup Time</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Dedicated</strong></td><td>1, 10, 100 Gbps</td><td>Weeks</td><td>Physical cross-connect; capacity is yours alone</td></tr>
+      <tr><td><strong>Hosted (via partner)</strong></td><td>50 Mbps – 10 Gbps</td><td>Days</td><td>Shares physical capacity with other customers</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Virtual Interfaces (VIFs)</h2>
+  <ul>
+    <li><strong>Private VIF</strong> — connects to a single VPC via a Virtual Private Gateway (VGW). One VIF → one VPC.</li>
+    <li><strong>Public VIF</strong> — access AWS public service endpoints (S3, DynamoDB, API endpoints) over DX, not the internet</li>
+    <li><strong>Transit VIF</strong> — connects to a Direct Connect Gateway, which then connects to Transit Gateways across multiple regions. Required for multi-VPC/multi-region topology.</li>
+  </ul>
+
+  <h2>Direct Connect Gateway</h2>
+  <ul>
+    <li>Global resource (not region-specific)</li>
+    <li>One DX connection → DX Gateway → VPCs in multiple AWS regions</li>
+    <li><strong>Cannot route between VPCs</strong> through the DX Gateway — only on-prem ↔ VPC traffic</li>
+    <li>Can be associated with multiple VGWs or TGWs</li>
+  </ul>
+
+  <h2>Resilience Patterns</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Level</th><th>Configuration</th></tr></thead>
+    <tbody>
+      <tr><td>Basic</td><td>1 DX connection (single point of failure)</td></tr>
+      <tr><td>High (recommended)</td><td>2 DX connections at 2 different DX locations</td></tr>
+      <tr><td>Maximum</td><td>2 connections per location × 2 locations = 4 connections</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Always configure a Site-to-Site VPN as DX fallback</li>
+    <li>BGP: set lower local-preference on VPN paths so DX is preferred</li>
+    <li>LAG (Link Aggregation Group): bundle multiple DX connections at the same location for higher throughput and redundancy</li>
+  </ul>
+
+  <h2>Encryption</h2>
+  <p>DX is <strong>not encrypted by default</strong> — it is a private physical wire, but not cryptographically protected. Two options:</p>
+  <ol>
+    <li><strong>VPN over Public VIF</strong> — IPSec tunnel over the DX public VIF. Encrypted + uses AWS backbone.</li>
+    <li><strong>MACsec (802.1AE)</strong> — Layer 2 hardware encryption. Only available on dedicated 10/100 Gbps connections.</li>
+  </ol>
+
+  <h2>Monitoring</h2>
+  <ul>
+    <li><code>ConnectionState</code> — up/down</li>
+    <li><code>ConnectionBpsEgress</code> / <code>ConnectionBpsIngress</code> — throughput metrics</li>
+  </ul>
+
+  <div class="callout callout-tip">
+    <ul>
+      <li>For multi-region access via a single DX: <strong>Transit VIF → DX Gateway → TGW (per region)</strong></li>
+      <li>DX does not encrypt — the most commonly tested trap; add VPN or MACsec when compliance requires encryption in transit</li>
+      <li>Private VIF → DX Gateway can reach multiple VPCs but only within the <strong>same region</strong> as the VGW; for multi-region you need Transit VIF → TGW</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Connection Types</a></li>
+      <li><a href="#">VIFs</a></li>
+      <li><a href="#">DX Gateway</a></li>
+      <li><a href="#">Resilience</a></li>
+      <li><a href="#">Encryption</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="transit-gateway.html">Transit Gateway</a></li>
+      <li><a href="../../cheatsheets/vpc-connectivity-options.html">VPC Connectivity Cheatsheet</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

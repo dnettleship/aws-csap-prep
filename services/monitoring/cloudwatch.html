@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudWatch &amp; X-Ray — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../networking/transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>CloudWatch &amp; X-Ray</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-monitor">Monitoring</div>
+    <h1>CloudWatch &amp; X-Ray</h1>
+    <p class="subtitle">Metrics, alarms, logs, dashboards, Container Insights, distributed tracing</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>CloudWatch Metrics</h2>
+  <ul>
+    <li><strong>Standard metrics</strong>: AWS service metrics published automatically (EC2 CPU, RDS FreeStorageSpace, etc.)</li>
+    <li><strong>Detailed monitoring</strong>: EC2 metrics every 1 minute (vs 5-min default); extra cost</li>
+    <li><strong>Custom metrics</strong>: publish application metrics via <code>PutMetricData</code> API; standard (1-min) or high-resolution (1-second)</li>
+    <li><strong>Metric Math</strong>: combine multiple metrics into expressions (e.g. error rate = errors / requests)</li>
+    <li><strong>Anomaly Detection</strong>: ML model learns metric baseline; alarm when metric is outside expected band</li>
+  </ul>
+
+  <h2>CloudWatch Alarms</h2>
+  <ul>
+    <li>States: OK, ALARM, INSUFFICIENT_DATA</li>
+    <li><strong>Actions</strong>: SNS notification, Auto Scaling policy, EC2 action (stop/terminate/reboot/recover), Systems Manager OpsItem</li>
+    <li><strong>Composite alarms</strong>: combine multiple alarms with AND/OR logic; reduces alarm noise</li>
+    <li><strong>Math alarms</strong>: alarm on a metric expression, not just a raw metric</li>
+    <li>Evaluation period + datapoints to alarm: e.g. "3 out of 5 datapoints above threshold" — reduces false positives from spikes</li>
+  </ul>
+
+  <h2>CloudWatch Logs</h2>
+  <ul>
+    <li><strong>Log groups</strong>: container for log streams; set retention (1 day – 10 years or never expire)</li>
+    <li><strong>Metric filters</strong>: extract metric values from log content (e.g. count of ERROR occurrences)</li>
+    <li><strong>CloudWatch Logs Insights</strong>: interactive SQL-like query language over log data; query multiple log groups; supports JSON log parsing</li>
+    <li><strong>Subscription filters</strong>: stream log data in near-real-time to Kinesis, Lambda, or OpenSearch</li>
+    <li><strong>Cross-account log sharing</strong>: share logs across accounts using Logs resource policies</li>
+    <li><strong>Log encryption</strong>: optionally encrypt log groups with KMS CMK</li>
+  </ul>
+
+  <h2>CloudWatch Container Insights</h2>
+  <ul>
+    <li>Collects metrics and logs from ECS, EKS, and Kubernetes clusters</li>
+    <li>Provides pre-built dashboards: cluster, service, task/pod CPU, memory, network</li>
+    <li>For EKS: requires the CloudWatch agent deployed as a DaemonSet</li>
+    <li>For ECS (EC2): CloudWatch agent sidecar; Fargate: built-in support via task metadata</li>
+  </ul>
+
+  <h2>CloudWatch Dashboards</h2>
+  <ul>
+    <li>Cross-account, cross-region dashboards — single pane of glass for multi-account environments</li>
+    <li>Shareable via link (public or requiring AWS sign-in); embed in internal portals</li>
+  </ul>
+
+  <h2>AWS X-Ray (Distributed Tracing)</h2>
+  <ul>
+    <li>Traces requests end-to-end across microservices; identifies latency bottlenecks and errors</li>
+    <li><strong>Segments</strong>: data for one service; <strong>subsegments</strong>: breakdown within a segment (e.g. DynamoDB call duration)</li>
+    <li><strong>Service Map</strong>: visual graph of service dependencies and health; shows latency and error rates per edge</li>
+    <li><strong>Sampling</strong>: records a configurable fraction of requests (default 5%/second + 5% of remainder) — reduces cost; configurable rules</li>
+    <li>Integrations: Lambda (built-in active tracing toggle), API Gateway, ECS, EC2 (X-Ray daemon), Elastic Beanstalk</li>
+  </ul>
+
+  <h2>VPC Flow Logs</h2>
+  <ul>
+    <li>Captures metadata about network traffic to/from ENIs in a VPC; not packet captures</li>
+    <li>Publish to CloudWatch Logs or S3</li>
+    <li>Use for: security analysis, identifying unexpected traffic, troubleshooting connectivity</li>
+    <li>Captured fields: srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, action (ACCEPT/REJECT)</li>
+  </ul>
+
+  <h2>CloudTrail</h2>
+  <ul>
+    <li>Records all AWS API calls (who did what, when, from where)</li>
+    <li>Management events: control-plane operations (create/delete/modify resources) — on by default in all regions</li>
+    <li>Data events: S3 object-level operations, Lambda invocations — not enabled by default; extra cost</li>
+    <li>Deliver to S3 and/or CloudWatch Logs; cross-account via organization trail</li>
+    <li>Integrity validation: hash digest files detect tampering</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Alert when error count in application logs exceeds threshold</td><td>CloudWatch Logs metric filter → CloudWatch Alarm → SNS</td></tr>
+      <tr><td>Identify which Lambda invocation caused high latency</td><td>AWS X-Ray with active tracing enabled on Lambda</td></tr>
+      <tr><td>Monitor CPU/memory for ECS containers</td><td>CloudWatch Container Insights</td></tr>
+      <tr><td>Query logs across 10 services for a specific request ID</td><td>CloudWatch Logs Insights (multi-log-group query)</td></tr>
+      <tr><td>Detect unusual metric patterns without a fixed threshold</td><td>CloudWatch Anomaly Detection</td></tr>
+      <tr><td>Who deleted the S3 bucket? Audit API calls</td><td>AWS CloudTrail — management events</td></tr>
+      <tr><td>Stream security logs in real-time to SIEM</td><td>CloudWatch Logs subscription filter → Kinesis Data Firehose → SIEM</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>CloudWatch metrics default retention varies by period — 1-second metrics kept 3 hours; 1-minute kept 15 days; 5-minute kept 63 days; 1-hour kept 15 months</li>
+      <li>CloudTrail records <strong>API calls</strong>, not OS-level activity — for OS/application logging, use CloudWatch Logs agent or SSM</li>
+      <li>VPC Flow Logs capture <strong>metadata only</strong> — packet payloads are not captured</li>
+      <li>X-Ray <strong>sampling</strong> means not every request is traced by default — for 100% sampling, configure a custom sampling rule</li>
+      <li>CloudWatch Alarms have a minimum 10-second resolution with high-resolution custom metrics</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Metrics</a></li>
+      <li><a href="#">Alarms</a></li>
+      <li><a href="#">Logs</a></li>
+      <li><a href="#">Container Insights</a></li>
+      <li><a href="#">X-Ray</a></li>
+      <li><a href="#">VPC Flow Logs</a></li>
+      <li><a href="#">CloudTrail</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../../domains/03-migration-modernization/index.html">Domain 3 — Continuous Improvement</a></li>
+      <li><a href="../compute/lambda.html">Lambda</a></li>
+      <li><a href="../compute/ecs-eks.html">ECS / EKS</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

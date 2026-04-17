@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amazon Aurora — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="aurora.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <span>Services / Databases</span><span>/</span>
+    <span>Aurora</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-db">Databases</div>
+    <h1>Amazon Aurora</h1>
+    <p class="subtitle">MySQL &amp; PostgreSQL-compatible — 5× MySQL throughput, 3× PostgreSQL, AWS-engineered storage</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Architecture</h2>
+  <ul>
+    <li><strong>Cluster</strong>: 1 primary (read/write) + up to 15 read replicas</li>
+    <li><strong>Storage</strong>: 6-way replication across 3 AZs; auto-grows to 128 TiB; no manual provisioning</li>
+    <li><strong>Endpoints</strong>:
+      <ul>
+        <li>Cluster endpoint → always points to primary (write)</li>
+        <li>Reader endpoint → load-balanced read traffic across replicas</li>
+        <li>Custom endpoints → defined subset of instances (e.g., analytics replicas)</li>
+        <li>Instance endpoints → connects to one specific instance</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>Key Features</h2>
+
+  <h3>Aurora Serverless v2</h3>
+  <ul>
+    <li>Scales in fine-grained 0.5 ACU increments within seconds</li>
+    <li>Minimum 0.5 ACU — <strong>does not scale to zero</strong> (use v1 for that)</li>
+    <li>Use for: variable workloads, dev/test, multi-tenant SaaS</li>
+  </ul>
+
+  <h3>Aurora Global Database</h3>
+  <ul>
+    <li>1 primary region + up to 5 secondary read-only regions</li>
+    <li>Replication lag typically &lt; 1 second</li>
+    <li>Managed failover: promote secondary in &lt; 1 minute</li>
+    <li>Use for: global low-latency reads + cross-region DR</li>
+  </ul>
+
+  <h3>Aurora Multi-Master (MySQL only)</h3>
+  <ul>
+    <li>Multiple read/write nodes; conflict resolution happens at storage layer</li>
+    <li>Single-region only; use for continuous write availability, not write scaling</li>
+  </ul>
+
+  <h3>Aurora Parallel Query</h3>
+  <ul>
+    <li>Pushes analytical query processing down to the distributed storage layer</li>
+    <li>Reduces data movement to head node; speeds up large analytical queries</li>
+    <li>Aurora MySQL only</li>
+  </ul>
+
+  <h2>Failover Priority</h2>
+  <ul>
+    <li>Replicas with lower priority tier number (0 = highest priority) are promoted first</li>
+    <li>Same tier → largest instance type promoted first</li>
+    <li>Failover time: ~30 seconds (vs ~60–120s for RDS Multi-AZ)</li>
+  </ul>
+
+  <h2>Backups &amp; Recovery</h2>
+  <ul>
+    <li><strong>Automated backups</strong>: 1–35 day retention; continuous to S3; zero I/O impact</li>
+    <li><strong>Snapshots</strong>: manual; kept until deleted; cross-region copy supported</li>
+    <li><strong>Backtrack (MySQL only)</strong>: rewind to any point in last 72 hours <em>in-place</em>, without restoring from a snapshot — takes seconds</li>
+  </ul>
+
+  <h2>Aurora vs RDS</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Aurora</th><th>RDS</th></tr></thead>
+    <tbody>
+      <tr><td>Storage</td><td>Auto-scaling, 6-way replicated</td><td>Manual EBS provisioning</td></tr>
+      <tr><td>Read replicas</td><td>Up to 15, &lt; 10ms replication lag</td><td>Up to 5, async</td></tr>
+      <tr><td>Failover</td><td>~30s (replica promotion)</td><td>~60–120s (standby promotion)</td></tr>
+      <tr><td>Standby readable</td><td>Yes (replicas serve reads)</td><td>No (Multi-AZ standby is hot standby only)</td></tr>
+      <tr><td>Backtrack</td><td>Yes (MySQL, 72hr window)</td><td>No</td></tr>
+      <tr><td>Global</td><td>Yes (Global Database)</td><td>No</td></tr>
+      <tr><td>Cost</td><td>~20% more than equivalent RDS</td><td>Lower base cost</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-tip">
+    <ul>
+      <li>Aurora replicas serve reads <strong>and</strong> are automatic failover targets — RDS read replicas are <em>only</em> for reads</li>
+      <li>RDS Multi-AZ standby is <strong>not readable</strong> — it exists solely for failover</li>
+      <li>Backtrack ≠ restore from snapshot: backtrack is in-place and takes seconds; a snapshot restore creates a new cluster</li>
+      <li>Aurora Serverless v1 → scales to zero; v2 → does not. Know which to recommend for "scale to zero on idle"</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Architecture</a></li>
+      <li><a href="#">Serverless v2</a></li>
+      <li><a href="#">Global Database</a></li>
+      <li><a href="#">Failover</a></li>
+      <li><a href="#">Backups</a></li>
+      <li><a href="#">vs RDS</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../../domains/02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+      <li><a href="../../architecture-patterns/disaster-recovery.html">DR Patterns</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

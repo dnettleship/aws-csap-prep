@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transit Gateway — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <span>Services / Networking</span><span>/</span>
+    <span>Transit Gateway</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-net">Networking</div>
+    <h1>AWS Transit Gateway</h1>
+    <p class="subtitle">Regional virtual router — hub-and-spoke topology replacing VPC peering meshes</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>What It Is</h2>
+  <p>Regional virtual router that connects VPCs and on-premises networks in a hub-and-spoke topology. Each new spoke only needs one attachment — no O(n²) peering connections.</p>
+
+  <h2>Key Concepts</h2>
+  <ul>
+    <li><strong>Attachments</strong> — VPC, VPN, Direct Connect Gateway, TGW Connect (SD-WAN/GRE), inter-region TGW peering</li>
+    <li><strong>Route Tables</strong> — each attachment is associated with exactly one route table; multiple route tables enable traffic segmentation</li>
+    <li><strong>Propagation</strong> — attachments can automatically propagate their CIDR routes into a route table</li>
+    <li><strong>Associations</strong> — each attachment has exactly one association (which route table controls its outbound routing)</li>
+  </ul>
+
+  <h2>Connectivity Patterns</h2>
+
+  <h3>Hub-and-Spoke (default)</h3>
+  <p>All VPCs attach to TGW → single shared route table → full mesh connectivity between all spokes.</p>
+
+  <h3>Segmented / Isolated Routing</h3>
+  <ul>
+    <li>Create separate route tables per environment (prod, dev, shared-services)</li>
+    <li>Prod VPCs: associated with <code>prod-rt</code>; only shared-services propagates into <code>prod-rt</code> → prod can reach shared services but not dev</li>
+    <li>Use case: compliance, blast radius reduction</li>
+  </ul>
+
+  <h3>Inter-Region</h3>
+  <ul>
+    <li>TGW peering attachments connect TGWs across regions</li>
+    <li>Static routes required across peering (no dynamic propagation)</li>
+    <li>Traffic stays entirely on the AWS global backbone</li>
+  </ul>
+
+  <h2>Limits &amp; Bandwidth</h2>
+  <ul>
+    <li>Max bandwidth per VPC attachment: 50 Gbps burst</li>
+    <li>Max attachments per TGW: 5,000</li>
+    <li>ECMP across VPN attachments: add multiple tunnels to scale VPN throughput beyond 1.25 Gbps</li>
+  </ul>
+
+  <h2>TGW vs VPC Peering</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Transit Gateway</th><th>VPC Peering</th></tr></thead>
+    <tbody>
+      <tr><td>Topology</td><td>Hub-and-spoke</td><td>Point-to-point (full mesh = O(n²))</td></tr>
+      <tr><td>Transitive routing</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Cost</td><td>Per attachment-hour + per GB</td><td>Per GB (cross-AZ/region only)</td></tr>
+      <tr><td>Cross-region</td><td>Yes (TGW peering)</td><td>Yes</td></tr>
+      <tr><td>Bandwidth limit</td><td>50 Gbps/attachment burst</td><td>No enforced limit</td></tr>
+      <tr><td>Cross-account</td><td>Yes (share via RAM)</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-tip">
+    <ul>
+      <li>VPC peering is <strong>non-transitive</strong> — A↔B and B↔C does not enable A↔C. TGW solves this.</li>
+      <li>RAM is required to share a TGW across accounts in an organisation</li>
+      <li>TGW Connect enables BGP over GRE for SD-WAN appliances — higher throughput than Site-to-Site VPN</li>
+      <li><strong>Appliance Mode</strong>: ensures symmetric routing for stateful NVAs (firewalls/IDS) in a shared-services VPC</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">What It Is</a></li>
+      <li><a href="#">Key Concepts</a></li>
+      <li><a href="#">Connectivity Patterns</a></li>
+      <li><a href="#">Limits</a></li>
+      <li><a href="#">vs VPC Peering</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="direct-connect.html">Direct Connect</a></li>
+      <li><a href="../../cheatsheets/vpc-connectivity-options.html">VPC Connectivity Cheatsheet</a></li>
+      <li><a href="../../domains/01-organizational-complexity/index.html">Domain 1 — Org Complexity</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

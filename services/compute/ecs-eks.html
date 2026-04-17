@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECS, EKS &amp; Fargate — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../networking/transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>ECS / EKS / Fargate</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-compute">Compute</div>
+    <h1>ECS, EKS &amp; Fargate</h1>
+    <p class="subtitle">Container orchestration, launch types, service mesh, auto scaling, App2Container</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>ECS vs EKS vs Fargate</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>ECS</th><th>EKS</th><th>Fargate</th></tr></thead>
+    <tbody>
+      <tr><td>Orchestrator</td><td>AWS-proprietary</td><td>Kubernetes (upstream)</td><td>N/A — serverless data plane</td></tr>
+      <tr><td>Control plane</td><td>AWS-managed</td><td>AWS-managed</td><td>AWS-managed</td></tr>
+      <tr><td>Data plane</td><td>EC2 or Fargate</td><td>EC2 or Fargate</td><td>Serverless — no nodes to manage</td></tr>
+      <tr><td>Kubernetes compatibility</td><td>No</td><td>Yes — use existing K8s tooling</td><td>Works with both</td></tr>
+      <tr><td>Best for</td><td>New containerised apps on AWS; simpler ops</td><td>Existing K8s workloads; multi-cloud portability</td><td>Eliminating EC2 management overhead</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>ECS Core Concepts</h2>
+  <ul>
+    <li><strong>Task Definition</strong>: blueprint — container image, CPU/memory, environment variables, volumes, IAM task role</li>
+    <li><strong>Task</strong>: running instance of a task definition; ephemeral</li>
+    <li><strong>Service</strong>: maintains desired count of tasks; integrates with load balancers; handles replacements on failure</li>
+    <li><strong>Cluster</strong>: logical grouping of tasks/services; spans AZs</li>
+    <li><strong>Task Role vs Execution Role</strong>: task role = permissions the container code uses (e.g. S3 access); execution role = permissions ECS uses to pull images and write logs</li>
+  </ul>
+
+  <h2>Launch Types</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>EC2 Launch Type</th><th>Fargate Launch Type</th></tr></thead>
+    <tbody>
+      <tr><td>Infrastructure</td><td>You provision and manage EC2 instances</td><td>AWS manages the underlying compute</td></tr>
+      <tr><td>Cost model</td><td>Pay for EC2 instances (can use Spot for savings)</td><td>Pay per vCPU + memory per second</td></tr>
+      <tr><td>Control</td><td>Full OS access; customise instance types</td><td>No OS access; fixed isolation per task</td></tr>
+      <tr><td>Spot support</td><td>Yes — run tasks on Spot instances</td><td>Fargate Spot — interrupted with 2-min warning</td></tr>
+      <tr><td>Best for</td><td>Cost-optimised, GPU workloads, compliance needing dedicated hosts</td><td>Simplicity, variable workloads, no ops overhead</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Auto Scaling</h2>
+  <ul>
+    <li><strong>Service Auto Scaling</strong>: scales ECS/EKS task count based on CPU, memory, ALB request count, or custom CloudWatch metrics</li>
+    <li><strong>Target tracking</strong>: simplest — maintain a metric at a target value (e.g. 70% CPU)</li>
+    <li><strong>Step scaling</strong>: different responses to different alarm thresholds</li>
+    <li><strong>Cluster Auto Scaling (EC2)</strong>: ECS Capacity Providers + Auto Scaling Group — scales EC2 nodes when tasks can't be placed</li>
+  </ul>
+
+  <h2>Networking Modes (ECS)</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Mode</th><th>Description</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>awsvpc</strong></td><td>Each task gets its own ENI and private IP in the VPC</td><td>Required for Fargate; enables Security Group per task</td></tr>
+      <tr><td><strong>bridge</strong></td><td>Docker's virtual network; dynamic port mapping on host</td><td>EC2 launch type; allows more tasks per host</td></tr>
+      <tr><td><strong>host</strong></td><td>Task shares host's network interface</td><td>High-performance networking; one task per host</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>App2Container (A2C)</h2>
+  <ul>
+    <li>AWS tool that analyses running Java and .NET apps on-premises or EC2</li>
+    <li>Automatically generates Dockerfiles, ECS/EKS task definitions, and CloudFormation/CDK templates</li>
+    <li>Use for <strong>containerisation</strong> migration strategy (lift-and-shift to containers)</li>
+  </ul>
+
+  <h2>EKS Key Concepts</h2>
+  <ul>
+    <li><strong>Managed node groups</strong>: AWS provisions and manages EC2 workers; supports Spot instances</li>
+    <li><strong>EKS Anywhere</strong>: run EKS on-premises on your own hardware</li>
+    <li><strong>EKS Distro</strong>: the same Kubernetes distribution AWS uses — run it anywhere</li>
+    <li><strong>AWS Load Balancer Controller</strong>: provisions ALB for Ingress, NLB for Service type LoadBalancer</li>
+    <li><strong>Karpenter</strong>: open-source node provisioner; more flexible and faster than Cluster Autoscaler</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Containerise Java app from on-premises without rewriting it</td><td>AWS App2Container → ECS or EKS task definition</td></tr>
+      <tr><td>Run containers without managing servers</td><td>ECS or EKS with Fargate launch type</td></tr>
+      <tr><td>Migrate existing Kubernetes workload to AWS</td><td>Amazon EKS (native Kubernetes compatibility)</td></tr>
+      <tr><td>Reduce container cost for fault-tolerant batch jobs</td><td>ECS with EC2 Spot or Fargate Spot</td></tr>
+      <tr><td>Run a long-running job that exceeds Lambda 15-min limit</td><td>ECS/Fargate task (no time limit)</td></tr>
+      <tr><td>Isolate containers at network level with Security Groups</td><td>ECS awsvpc network mode (one ENI per task)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li><strong>awsvpc</strong> mode is required for Fargate — tasks get dedicated ENIs; Security Groups apply per task not per host</li>
+      <li>ECS does <strong>not</strong> require Kubernetes knowledge — EKS does; choose based on existing tooling and skills</li>
+      <li>Fargate Spot can be interrupted — workloads must handle graceful shutdown on 2-minute warning</li>
+      <li>Task role provides AWS API credentials to the container — do not inject credentials via environment variables; use the task role</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">ECS vs EKS vs Fargate</a></li>
+      <li><a href="#">ECS Concepts</a></li>
+      <li><a href="#">Launch Types</a></li>
+      <li><a href="#">Auto Scaling</a></li>
+      <li><a href="#">Networking Modes</a></li>
+      <li><a href="#">App2Container</a></li>
+      <li><a href="#">EKS</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="lambda.html">Lambda</a></li>
+      <li><a href="../../domains/04-cost-performance/index.html">Domain 4 — Migration</a></li>
+      <li><a href="../../architecture-patterns/high-availability.html">High Availability</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

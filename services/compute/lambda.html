@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lambda &amp; Step Functions — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../networking/transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>Lambda &amp; Step Functions</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-compute">Compute</div>
+    <h1>Lambda &amp; Step Functions</h1>
+    <p class="subtitle">Serverless execution, concurrency, cold starts, event sources, orchestration</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Lambda Fundamentals</h2>
+  <ul>
+    <li><strong>Max execution time</strong>: 15 minutes — not suitable for long-running jobs; use ECS/Fargate or Step Functions</li>
+    <li><strong>Memory</strong>: 128 MB – 10,240 MB; CPU allocation scales linearly with memory — increase memory to get more CPU</li>
+    <li><strong>Ephemeral storage (/tmp)</strong>: up to 10,240 MB; lost after invocation</li>
+    <li><strong>Deployment package</strong>: up to 50 MB zipped (250 MB unzipped); use Lambda Layers or container images (up to 10 GB) for larger dependencies</li>
+    <li>Runs in <strong>AWS-managed VPC</strong> by default; attach to your VPC for private resource access (adds cold start latency)</li>
+  </ul>
+
+  <h2>Concurrency</h2>
+  <ul>
+    <li><strong>Default concurrent executions</strong>: 1,000 per region (across all functions); soft limit — can be increased via support</li>
+    <li><strong>Reserved concurrency</strong>: guarantees N executions for a function; also caps it at N — prevents one function from consuming all regional capacity</li>
+    <li><strong>Provisioned Concurrency</strong>: pre-initialised execution environments; eliminates cold starts; pay even when idle; use for latency-sensitive functions</li>
+    <li>When concurrency limit is hit: synchronous invocations return 429 (throttled); SQS/Kinesis triggers retry; async invocations go to DLQ</li>
+  </ul>
+
+  <h2>Cold Starts</h2>
+  <ul>
+    <li>First invocation (or after idle period) requires initialising a new execution environment — adds 100ms–1s+ latency</li>
+    <li>Minimise with: smaller packages, compiled runtimes (Rust &gt; Go &gt; Java &gt; Python), Provisioned Concurrency</li>
+    <li>VPC-attached Lambda cold starts are higher (ENI creation) — mitigated since 2019 with shared ENI model, but still higher than non-VPC</li>
+  </ul>
+
+  <h2>Invocation Models</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Model</th><th>Behaviour</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Synchronous</strong></td><td>Caller waits for response; errors returned to caller</td><td>API Gateway, ALB, SDK direct invoke</td></tr>
+      <tr><td><strong>Asynchronous</strong></td><td>Lambda queues the event; retries twice on failure; DLQ or destination on failure</td><td>S3 events, SNS, EventBridge, CloudWatch Events</td></tr>
+      <tr><td><strong>Event source mapping</strong></td><td>Lambda polls the source; processes batches; source controls retry behaviour</td><td>SQS, Kinesis, DynamoDB Streams, MSK, MQ</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Event Source Mapping — Key Settings</h2>
+  <ul>
+    <li><strong>Batch size</strong>: number of records sent per Lambda invocation; larger batches = fewer invocations = more efficient</li>
+    <li><strong>Bisect on error</strong>: split a failed batch in half to isolate poison pill records (Kinesis / DynamoDB Streams)</li>
+    <li><strong>Maximum retry attempts / bisect</strong>: configure failure handling before moving records to DLQ/destination</li>
+    <li><strong>Filter criteria</strong>: process only matching events (reduces unnecessary invocations)</li>
+  </ul>
+
+  <h2>Destinations &amp; DLQ</h2>
+  <ul>
+    <li><strong>Async destinations</strong>: on success or failure, send invocation record to SQS, SNS, EventBridge, or another Lambda</li>
+    <li><strong>DLQ</strong>: legacy mechanism for failed async invocations; SQS or SNS; captures payload only</li>
+    <li>Prefer <strong>Destinations</strong> over DLQ — richer context, success + failure routing</li>
+  </ul>
+
+  <h2>Layers &amp; Container Images</h2>
+  <ul>
+    <li><strong>Layers</strong>: shared code/dependencies as a zip; up to 5 layers per function; total unzipped ≤ 250 MB</li>
+    <li><strong>Container images</strong>: package function as Docker image up to 10 GB; use for large ML models or complex dependencies</li>
+  </ul>
+
+  <h2>Step Functions</h2>
+  <ul>
+    <li>Serverless orchestration for multi-step workflows; state machine defined in Amazon States Language (JSON/YAML)</li>
+    <li><strong>Standard workflows</strong>: durable; up to 1 year; exactly-once execution; audit history in console; pay per state transition</li>
+    <li><strong>Express workflows</strong>: high-throughput; up to 5 minutes; at-least-once; pay per execution duration; CloudWatch Logs for audit</li>
+    <li>Integrates with Lambda, ECS, DynamoDB, SQS, SNS, Bedrock, HTTP endpoints, and more — without writing glue code</li>
+    <li>Use for: data pipelines, order processing, ML training pipelines, human approval workflows</li>
+    <li><strong>Wait for task token</strong>: pause workflow until an external system sends a callback — use for human approvals or async integrations</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Eliminate cold starts for a customer-facing API Lambda</td><td>Provisioned Concurrency</td></tr>
+      <tr><td>Lambda processes SQS messages but one bad message blocks the queue</td><td>DLQ on SQS queue + bisect-on-error on event source mapping</td></tr>
+      <tr><td>Multi-step workflow with human approval gate</td><td>Step Functions Standard + wait-for-task-token</td></tr>
+      <tr><td>Lambda needs to access RDS in a private subnet</td><td>Attach Lambda to VPC (same VPC/subnet as RDS)</td></tr>
+      <tr><td>Prevent one function from starving others of concurrency</td><td>Reserved concurrency on the greedy function</td></tr>
+      <tr><td>Run a job that takes 2 hours</td><td>ECS/Fargate (Lambda max 15 min)</td></tr>
+      <tr><td>Large ML model inference (5 GB model file)</td><td>Lambda container image (up to 10 GB)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Lambda max timeout is <strong>15 minutes</strong> — any workload exceeding this needs ECS, Fargate, or Batch</li>
+      <li>Increasing memory also increases CPU — if a function is CPU-bound and slow, double the memory first</li>
+      <li>Provisioned Concurrency is <strong>billed even when idle</strong> — cost trade-off vs cold start latency</li>
+      <li>Lambda in a VPC requires a NAT Gateway or VPC endpoints to reach AWS services outside the VPC</li>
+      <li>Step Functions Express workflows are <strong>at-least-once</strong> — not suitable for non-idempotent operations</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Lambda Fundamentals</a></li>
+      <li><a href="#">Concurrency</a></li>
+      <li><a href="#">Cold Starts</a></li>
+      <li><a href="#">Invocation Models</a></li>
+      <li><a href="#">Event Source Mapping</a></li>
+      <li><a href="#">Step Functions</a></li>
+      <li><a href="#">Exam Scenarios</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="ecs-eks.html">ECS / EKS / Fargate</a></li>
+      <li><a href="../messaging/sqs-sns-eventbridge.html">SQS / SNS / EventBridge</a></li>
+      <li><a href="../../domains/02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

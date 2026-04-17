@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mock Exam 1 — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+  <style>
+    .exam-wrap{max-width:760px;margin:0 auto}
+    .exam-meta{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap}
+    .q-counter{color:var(--muted);font-size:.85rem}
+    .progress-bar-wrap{background:var(--surface2);border-radius:999px;height:5px;flex:1;min-width:120px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),#818cf8);border-radius:999px;transition:width .35s ease;width:0%}
+    .question-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem}
+    .question-card.state-correct{border-color:#22c55e}.question-card.state-incorrect{border-color:#ef4444}
+    .question-header{display:flex;align-items:flex-start;gap:.75rem;margin:.75rem 0 1.25rem}
+    .question-number{background:var(--surface2);color:var(--muted);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.25rem .6rem;border-radius:6px;white-space:nowrap;margin-top:2px;flex-shrink:0}
+    .question-text{font-size:.975rem;line-height:1.65}
+    .options{display:flex;flex-direction:column;gap:.6rem}
+    .option{display:flex;align-items:flex-start;gap:.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+    .option:hover{border-color:#4f5b7a}
+    .option input[type=radio]{accent-color:var(--accent);margin-top:2px;flex-shrink:0;width:16px;height:16px}
+    .option-label{font-size:.9rem;line-height:1.55;color:var(--text-muted)}
+    .option.show-correct{border-color:#22c55e!important;background:#052e16!important}
+    .option.show-wrong{border-color:#ef4444!important;background:#2d0a0a!important}
+    .option.show-correct .option-label,.option.show-wrong .option-label{color:var(--text)}
+    .result-badge{display:none;font-size:.8rem;margin-top:1.1rem;padding:.65rem .9rem;border-radius:8px;line-height:1.6}
+    .result-badge.correct-msg{display:block;background:#052e16;color:#86efac;border:1px solid #166534}
+    .result-badge.incorrect-msg{display:block;background:#2d0a0a;color:#fca5a5;border:1px solid #7f1d1d}
+    .result-badge a{color:#93c5fd;text-underline-offset:3px}
+    .exam-actions{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#818cf8);color:#fff;font-size:.95rem;font-weight:600;padding:.75rem 1.75rem;border:none;border-radius:8px;cursor:pointer;transition:opacity .2s,transform .1s}
+    .btn-primary:hover{opacity:.88}.btn-primary:active{transform:scale(.98)}.btn-primary:disabled{opacity:.35;cursor:not-allowed}
+    #score-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2.5rem 2rem;text-align:center}
+    #score-card h2{font-size:1.4rem;margin-bottom:.5rem}
+    .score-number{font-size:3.5rem;font-weight:800;letter-spacing:-.03em;margin:.5rem 0}
+    .score-label{color:var(--muted);font-size:.9rem}
+    .score-breakdown{display:flex;justify-content:center;gap:2.5rem;margin-top:1.5rem;flex-wrap:wrap}
+    .breakdown-item .val{font-size:1.5rem;font-weight:700}
+    .breakdown-item .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
+    .pass{color:#4ade80}.marginal{color:#fbbf24}.fail{color:#f87171}
+    .correct-val{color:#4ade80}.incorrect-val{color:#f87171}
+    .domain-report{margin-top:1.5rem;text-align:left;border-top:1px solid var(--border);padding-top:1.25rem}
+    .domain-report h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.75rem}
+    .domain-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;font-size:.88rem}
+    .domain-row .d-label{flex:1;color:var(--text-muted)}
+    .domain-row .d-score{font-weight:700;min-width:60px;text-align:right}
+    .domain-bar-bg{flex:2;background:var(--surface2);border-radius:999px;height:6px;overflow:hidden}
+    .domain-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#818cf8)}
+    .domain-bar.weak{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .download-btn{margin-top:1.25rem;display:inline-block;background:var(--surface2);color:var(--text);font-size:.85rem;font-weight:600;padding:.55rem 1.25rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .15s}
+    .download-btn:hover{border-color:var(--accent)}
+    .btn-restart{margin-top:.75rem;display:inline-block;background:var(--surface2);color:var(--text);font-size:.9rem;font-weight:600;padding:.65rem 1.5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .15s}
+    .btn-restart:hover{border-color:var(--accent)}
+  </style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../../services/networking/transit-gateway.html">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="mock-exam-01.html" class="nav-cta active">Mock Exam</a>
+  </div>
+</nav>
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#practice">Practice</a><span>/</span>
+    <span>Mock Exam 1</span>
+  </nav>
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-cheat">Practice</div>
+    <h1>Mock Exam 1</h1>
+    <p class="subtitle">10 questions &bull; One at a time &bull; Passing score: 75%</p>
+  </div>
+  <div class="exam-wrap">
+    <div class="exam-meta">
+      <span class="q-counter" id="qCounter">Question 1 of 10</span>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+    <div class="question-card" id="questionCard">
+      <span class="domain-tag" id="qDomainTag"></span>
+      <div class="question-header"><span class="question-number" id="qNumber"></span><p class="question-text" id="qText"></p></div>
+      <div class="options" id="qOptions"></div>
+      <div class="result-badge" id="resultBadge"></div>
+    </div>
+    <div class="exam-actions">
+      <button class="btn-primary" id="submitBtn">Submit Answer</button>
+      <button class="btn-primary" id="nextBtn" style="display:none">Next Question &rarr;</button>
+      <button class="btn-primary" id="finishBtn" style="display:none">See My Results &rarr;</button>
+    </div>
+    <div id="score-card">
+      <h2>Your Result</h2>
+      <div class="score-number" id="scorePercent"></div>
+      <div class="score-label" id="scoreLabel"></div>
+      <div class="score-breakdown">
+        <div class="breakdown-item"><div class="val correct-val" id="countCorrect">0</div><div class="lbl">Correct</div></div>
+        <div class="breakdown-item"><div class="val incorrect-val" id="countIncorrect">0</div><div class="lbl">Incorrect</div></div>
+        <div class="breakdown-item"><div class="val" id="countUnanswered">0</div><div class="lbl">Skipped</div></div>
+      </div>
+      <div class="domain-report">
+        <h3>Domain Breakdown</h3>
+        <div id="domainBreakdown"></div>
+      </div>
+      <button class="download-btn" id="downloadBtn">&#11015; Download Results JSON</button><br>
+      <button class="btn-restart" id="restartBtn">Restart Exam</button>
+    </div>
+  </div>
+</div>
+<script>
+const EXAM_NAME="Mock Exam 1";
+const QUESTIONS=[
+  {id:"q1",domain:1,text:"A company uses AWS Organizations. The security team wants to ensure no account can disable CloudTrail, even the root user of that account. Which action meets this requirement?",options:{A:"Create an IAM policy in each member account denying cloudtrail:StopLogging and attach it to all users.",B:"Create an SCP denying cloudtrail:StopLogging and cloudtrail:DeleteTrail, attached to the organisation root.",C:"Enable AWS Config with a rule that auto-remediates CloudTrail disablement.",D:"Attach an SCP denying cloudtrail:StopLogging to the management account."}},
+  {id:"q2",domain:2,text:"An application processes financial transactions via a queue. Order must be preserved and each transaction processed exactly once. Peak throughput is 500 TPS. Which solution meets these requirements?",options:{A:"SQS Standard queue with consumer-side deduplication.",B:"SQS FIFO queue with deduplication IDs and a message group ID per transaction.",C:"Kinesis Data Streams with a single shard and Lambda consumer.",D:"SNS FIFO topic with an SQS Standard queue subscription."}},
+  {id:"q3",domain:4,text:"A company needs to migrate a 200 TB Oracle database to Aurora PostgreSQL, minimising downtime to under 15 minutes. What is the correct sequence?",options:{A:"DMS full load only, cut over during a maintenance window.",B:"AWS SCT to convert the schema, then DMS with full load and CDC replication; cut over when in sync.",C:"DataSync to copy database files, then import into Aurora.",D:"MGN to replicate the Oracle server to EC2, then restore a dump into Aurora."}},
+  {id:"q4",domain:3,text:"A company runs EC2 across many instance families and regions. They want the largest discount with flexibility to change instance types and regions over time. Which option is best?",options:{A:"EC2 Instance Savings Plans committed to a specific family and region.",B:"Standard Reserved Instances for each current instance type.",C:"Compute Savings Plans committing to a consistent compute spend ($/hr).",D:"Spot Instances across multiple instance types."}},
+  {id:"q5",domain:1,text:"A solutions architect must connect 30 VPCs across multiple accounts for full mesh connectivity. New VPCs should not require changes to existing ones. Which solution is best?",options:{A:"VPC peering between every pair of VPCs.",B:"Transit Gateway attached to all VPCs, shared via RAM.",C:"PrivateLink endpoints in each VPC.",D:"A central VPC with peering to all others."}},
+  {id:"q6",domain:2,text:"A company needs a relational database with sub-second global read access across three continents and failover under 1 minute on a regional outage. Which service meets these requirements?",options:{A:"Amazon RDS Multi-AZ with cross-region read replicas.",B:"Amazon Aurora Global Database with secondary regions per continent.",C:"Amazon DynamoDB Global Tables with a relational schema.",D:"Amazon Aurora Multi-Master deployed across regions."}},
+  {id:"q7",domain:1,text:"A company wants developers to create IAM roles but prevent them from granting more permissions than they themselves have. Which mechanism achieves this?",options:{A:"SCP restricting iam:CreateRole in all member accounts.",B:"IAM Permission Boundaries — require all new roles to have a boundary limiting their maximum permissions.",C:"AWS Config rule iam-no-inline-policy to block overly permissive policies.",D:"SCP allowing only specific managed policies to be attached to roles."}},
+  {id:"q8",domain:3,text:"A company runs interruptible, stateless batch EC2 jobs averaging 45 minutes. They want minimum cost. Which purchasing option is most appropriate?",options:{A:"On-Demand Instances.",B:"Reserved Instances (1-year, no upfront).",C:"Spot Instances with checkpointing to S3.",D:"Dedicated Hosts."}},
+  {id:"q9",domain:2,text:"A company needs a DR solution with RTO < 15 min and RPO < 1 min. Budget prevents running full production capacity in the DR region at all times. Which strategy is correct?",options:{A:"Backup and Restore — hourly snapshots, restore to DR on failure.",B:"Active-Active — full production in two regions simultaneously.",C:"Warm Standby — scaled-down functional environment in DR region; scale up on failover.",D:"Pilot Light — replicate only core data; provision compute on failure."}},
+  {id:"q10",domain:4,text:"A company needs to migrate 50 physical servers to AWS quickly with minimal downtime and no OS changes. Which service should they use?",options:{A:"AWS Server Migration Service (SMS).",B:"AWS Application Migration Service (MGN) with the replication agent on each server.",C:"AWS Database Migration Service (DMS).",D:"AWS DataSync with the on-premises agent."}}
+];
+const ANSWERS={
+  q1:{correct:"B",explanation:"SCPs at the org root apply to all member accounts and cannot be overridden by root users. IAM policies (A) don't restrict root. Config (C) is detective, not preventive. Management account (D) is exempt from SCPs.",link:"../../domains/01-organizational-complexity/index.html"},
+  q2:{correct:"B",explanation:"SQS FIFO guarantees ordering and exactly-once processing with deduplication IDs. Standard queues (A) are at-least-once with no ordering. A single Kinesis shard (C) is limited to 1,000 writes/s. SNS FIFO + Standard SQS (D) loses exactly-once at the SQS layer.",link:"../../domains/02-new-solutions/index.html"},
+  q3:{correct:"B",explanation:"Heterogeneous migrations (Oracle → Aurora PostgreSQL) require SCT first for schema conversion, then DMS for data + CDC replication for near-zero downtime. DMS alone (A) can't handle schema differences. DataSync (C) is for file data. MGN (D) migrates servers, not databases.",link:"../../domains/04-cost-performance/index.html"},
+  q4:{correct:"C",explanation:"Compute Savings Plans apply to any EC2 family, size, region, OS, Fargate, and Lambda — maximum flexibility. EC2 Instance Savings Plans (A) are locked to a family/region. Standard RIs (B) are least flexible. Spot (D) is interruptible.",link:"../../domains/03-migration-modernization/index.html"},
+  q5:{correct:"B",explanation:"Transit Gateway provides transitive hub-and-spoke routing. New VPCs only need to attach to the TGW. Peering (A) is non-transitive and O(n²). PrivateLink (C) is one-directional. Central peering hub (D) is still non-transitive.",link:"../../services/networking/transit-gateway.html"},
+  q6:{correct:"B",explanation:"Aurora Global Database replicates with <1s lag to secondary regions and supports managed failover in under 1 minute. RDS cross-region replicas (A) have higher lag and longer failover. DynamoDB (C) is not relational. Aurora Multi-Master (D) is single-region only.",link:"../../services/databases/aurora.html"},
+  q7:{correct:"B",explanation:"IAM Permission Boundaries set the maximum permissions a role can have — prevents privilege escalation. SCPs (A) would prevent all role creation. Config rules (C) are detective. SCPs (D) cannot control which managed policies are attached.",link:"../../services/security/iam-organizations.html"},
+  q8:{correct:"C",explanation:"Spot Instances offer up to 90% discount and are ideal for fault-tolerant batch workloads. Checkpointing allows resume after interruption. On-Demand (A) is most expensive. RIs (B) are for steady workloads. Dedicated Hosts (D) are most expensive.",link:"../../domains/03-migration-modernization/index.html"},
+  q9:{correct:"C",explanation:"Warm Standby has a scaled-down but functional environment with live data replication (RPO seconds), scaled up quickly on failover (RTO minutes) — no full active-active cost. Backup/Restore (A) has RTO of hours. Active-Active (B) exceeds budget. Pilot Light (D) has RTO 30–60 min as compute must be provisioned.",link:"../../architecture-patterns/disaster-recovery.html"},
+  q10:{correct:"B",explanation:"MGN is the current recommended lift-and-shift tool — continuous block-level replication, near-zero cutover downtime. SMS (A) is deprecated. DMS (C) migrates databases. DataSync (D) transfers files.",link:"../../domains/04-cost-performance/index.html"}
+};
+const DOMAIN_NAMES={1:"Org Complexity",2:"New Solutions",3:"Continuous Improvement",4:"Migration"};
+const DOMAIN_LABELS={1:{label:"Domain 1 \u2014 Org Complexity",cls:"tag-d1"},2:{label:"Domain 2 \u2014 New Solutions",cls:"tag-d2"},3:{label:"Domain 3 \u2014 Continuous Improvement",cls:"tag-d3"},4:{label:"Domain 4 \u2014 Migration",cls:"tag-d4"}};
+let current=0,results=[],questionResults=[];
+const qCounter=document.getElementById("qCounter"),progressBar=document.getElementById("progressBar");
+const card=document.getElementById("questionCard"),domainTag=document.getElementById("qDomainTag");
+const qNumber=document.getElementById("qNumber"),qText=document.getElementById("qText");
+const qOptions=document.getElementById("qOptions"),resultBadge=document.getElementById("resultBadge");
+const submitBtn=document.getElementById("submitBtn"),nextBtn=document.getElementById("nextBtn");
+const finishBtn=document.getElementById("finishBtn"),scoreCard=document.getElementById("score-card");
+function renderQuestion(idx){
+  const q=QUESTIONS[idx],d=DOMAIN_LABELS[q.domain];
+  card.className="question-card";
+  domainTag.textContent=d.label;domainTag.className="domain-tag card-tag "+d.cls;
+  qNumber.textContent="Q"+(idx+1);qText.innerHTML=q.text;
+  qCounter.textContent="Question "+(idx+1)+" of "+QUESTIONS.length;
+  progressBar.style.width=(idx/QUESTIONS.length*100)+"%";
+  resultBadge.className="result-badge";resultBadge.innerHTML="";
+  qOptions.innerHTML="";
+  Object.entries(q.options).forEach(([val,text])=>{
+    const label=document.createElement("label");label.className="option";
+    label.innerHTML=`<input type="radio" name="answer" value="${val}"/><span class="option-label"><strong>${val}.</strong> ${text}</span>`;
+    qOptions.appendChild(label);
+  });
+  submitBtn.style.display="inline-block";submitBtn.disabled=false;
+  nextBtn.style.display="none";finishBtn.style.display="none";
+  document.querySelector(".exam-wrap").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function showFeedback(){
+  const selected=document.querySelector('input[name="answer"]:checked');
+  const q=QUESTIONS[current],data=ANSWERS[q.id];
+  document.querySelectorAll('input[name="answer"]').forEach(r=>r.disabled=true);
+  document.querySelectorAll('input[name="answer"]').forEach(radio=>{if(radio.value===data.correct)radio.closest(".option").classList.add("show-correct");});
+  let outcome;
+  if(!selected){outcome="skipped";card.classList.add("state-incorrect");resultBadge.className="result-badge incorrect-msg";resultBadge.innerHTML=`&#9888; Skipped. Correct: <strong>${data.correct}</strong>. ${data.explanation} <a href="${data.link}">Review &rarr;</a>`;}
+  else if(selected.value===data.correct){outcome="correct";card.classList.add("state-correct");resultBadge.className="result-badge correct-msg";resultBadge.innerHTML=`&#10003; Correct! ${data.explanation}`;}
+  else{outcome="incorrect";card.classList.add("state-incorrect");selected.closest(".option").classList.add("show-wrong");resultBadge.className="result-badge incorrect-msg";resultBadge.innerHTML=`&#10007; You chose <strong>${selected.value}</strong>; correct: <strong>${data.correct}</strong>. ${data.explanation} <a href="${data.link}">Review &rarr;</a>`;}
+  results.push(outcome);questionResults.push({q:q.id,domain:q.domain,outcome,chosen:selected?selected.value:null,correct:data.correct});
+  submitBtn.style.display="none";
+  if(current<QUESTIONS.length-1)nextBtn.style.display="inline-block";else finishBtn.style.display="inline-block";
+}
+function showScore(){
+  const correct=results.filter(r=>r==="correct").length,incorrect=results.filter(r=>r==="incorrect").length,skipped=results.filter(r=>r==="skipped").length;
+  const pct=Math.round(correct/QUESTIONS.length*100);
+  document.getElementById("countCorrect").textContent=correct;document.getElementById("countIncorrect").textContent=incorrect;document.getElementById("countUnanswered").textContent=skipped;
+  const scoreEl=document.getElementById("scorePercent"),labelEl=document.getElementById("scoreLabel");
+  scoreEl.textContent=pct+"%";
+  if(pct>=75){scoreEl.className="score-number pass";labelEl.textContent="Pass — great work!";}else if(pct>=60){scoreEl.className="score-number marginal";labelEl.textContent="Close — review the weak domains below.";}else{scoreEl.className="score-number fail";labelEl.textContent="Keep studying — focus on the domains highlighted below.";}
+  const domainStats={};[1,2,3,4].forEach(d=>{domainStats[d]={correct:0,total:0};});
+  questionResults.forEach(r=>{domainStats[r.domain].total++;if(r.outcome==="correct")domainStats[r.domain].correct++;});
+  const breakdownEl=document.getElementById("domainBreakdown");breakdownEl.innerHTML="";
+  [1,2,3,4].forEach(d=>{
+    const s=domainStats[d];if(!s.total)return;
+    const pctD=Math.round(s.correct/s.total*100),weak=pctD<60;
+    const row=document.createElement("div");row.className="domain-row";
+    row.innerHTML=`<span class="d-label">${DOMAIN_NAMES[d]}</span><div class="domain-bar-bg"><div class="domain-bar${weak?" weak":""}" style="width:${pctD}%"></div></div><span class="d-score" style="color:${weak?"#f87171":"#4ade80"}">${s.correct}/${s.total} (${pctD}%)</span>`;
+    breakdownEl.appendChild(row);
+  });
+  progressBar.style.width="100%";scoreCard.style.display="block";scoreCard.scrollIntoView({behavior:"smooth",block:"start"});
+}
+document.getElementById("downloadBtn").addEventListener("click",()=>{
+  const domainStats={};[1,2,3,4].forEach(d=>{domainStats[d]={name:DOMAIN_NAMES[d],correct:0,total:0,weakQuestions:[]};});
+  questionResults.forEach(r=>{domainStats[r.domain].total++;if(r.outcome==="correct")domainStats[r.domain].correct++;else domainStats[r.domain].weakQuestions.push(r.q);});
+  const weakAreas=Object.entries(domainStats).filter(([,s])=>s.total>0&&Math.round(s.correct/s.total*100)<60).map(([,s])=>s.name);
+  const report={exam:EXAM_NAME,date:new Date().toISOString().split("T")[0],score:Math.round(questionResults.filter(r=>r.outcome==="correct").length/QUESTIONS.length*100),domains:domainStats,weakAreas};
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${EXAM_NAME.replace(/ /g,"-").toLowerCase()}-results-${report.date}.json`;a.click();
+});
+submitBtn.addEventListener("click",showFeedback);
+nextBtn.addEventListener("click",()=>{current++;renderQuestion(current);});
+finishBtn.addEventListener("click",()=>{finishBtn.style.display="none";showScore();});
+document.getElementById("restartBtn").addEventListener("click",()=>{current=0;results=[];questionResults=[];scoreCard.style.display="none";finishBtn.style.display="none";renderQuestion(0);});
+renderQuestion(0);
+</script>
+</body>
+</html>

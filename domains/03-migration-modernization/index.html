@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Domain 3: Continuous Improvement — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../01-organizational-complexity/index.html" class="active">Domains</a>
+    <a href="../../services/networking/transit-gateway.html">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#domains">Domains</a><span>/</span>
+    <span>Domain 3</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-d3">Domain 3 — 25%</div>
+    <h1>Continuous Improvement for Existing Solutions</h1>
+    <p class="subtitle">Performance optimisation, cost reduction, security improvements, observability, Well-Architected reviews</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Compute Optimisation</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Option</th><th>Discount</th><th>Best For</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Compute Savings Plans</strong></td><td>up to 66%</td><td>Flexible: any instance family, region, OS, Fargate, Lambda</td></tr>
+      <tr><td><strong>EC2 Instance Savings Plans</strong></td><td>up to 72%</td><td>Committed to family + region; less flexible</td></tr>
+      <tr><td><strong>Reserved Instances</strong></td><td>up to 75%</td><td>Stable, predictable workloads; Standard RIs can be sold on Marketplace</td></tr>
+      <tr><td><strong>Spot Instances</strong></td><td>up to 90%</td><td>Fault-tolerant, stateless, interruptible workloads</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Right-size with <strong>AWS Compute Optimizer</strong> (ML-based recommendations for EC2, Lambda, ECS, EBS)</li>
+    <li>Graviton (ARM) instances: 20–40% better price/performance for most workloads</li>
+    <li>Lambda: increase memory to increase CPU allocation; Provisioned Concurrency eliminates cold starts</li>
+  </ul>
+
+  <h2>Storage Cost Optimisation</h2>
+  <ul>
+    <li><strong>S3 Intelligent-Tiering</strong>: auto-moves objects; per-object monitoring fee — not suitable for objects &lt; 128 KB</li>
+    <li><strong>S3 Lifecycle policies</strong>: automate transitions (Standard → IA → Glacier → Deep Archive)</li>
+    <li><strong>EBS</strong>: gp3 is cheaper than gp2 at the same performance; delete unattached volumes; use Snapshot Lifecycle Manager</li>
+  </ul>
+
+  <h2>Networking Cost Optimisation</h2>
+  <ul>
+    <li>Same-AZ traffic is free; cross-AZ is charged; cross-region is charged</li>
+    <li><strong>VPC Gateway Endpoints</strong> for S3 and DynamoDB are free — eliminate NAT Gateway processing charges for those services</li>
+    <li>NAT Gateway: charged per GB processed + per hour — most expensive for high-volume internal AWS traffic</li>
+    <li><strong>CloudFront</strong>: reduces origin data transfer costs via edge caching</li>
+  </ul>
+
+  <h2>Database Performance &amp; Cost</h2>
+  <ul>
+    <li><strong>RDS Read Replicas</strong>: offload reads; up to 15 Aurora replicas; can promote for DR</li>
+    <li><strong>ElastiCache</strong>: cache frequent reads; Redis for persistence/pub-sub; Memcached for simple cache</li>
+    <li><strong>DynamoDB DAX</strong>: microsecond reads; fully API-compatible in-memory cache</li>
+    <li><strong>Aurora Parallel Query</strong>: pushes analytical processing to storage layer</li>
+    <li><strong>Aurora Serverless v2</strong>: 0.5 ACU minimum; dev/test or sporadic workloads</li>
+    <li><strong>RDS</strong>: stop instances when not needed; right-size via Performance Insights</li>
+  </ul>
+
+  <h2>Observability &amp; Monitoring</h2>
+  <ul>
+    <li><strong>CloudWatch</strong>: metrics, alarms, dashboards, Logs Insights; use metric math for composite metrics</li>
+    <li><strong>CloudWatch Container Insights</strong>: ECS/EKS performance monitoring</li>
+    <li><strong>AWS X-Ray</strong>: distributed tracing across services; identify latency bottlenecks</li>
+    <li><strong>AWS CloudTrail</strong>: API activity logs for security and audit</li>
+    <li><strong>VPC Flow Logs</strong>: network traffic metadata for troubleshooting and security</li>
+  </ul>
+
+  <h2>Well-Architected Framework</h2>
+  <p>Five pillars — each represents an axis of improvement for existing solutions:</p>
+  <ul>
+    <li><strong>Operational Excellence</strong>: IaC (CloudFormation/CDK), runbooks, post-incident reviews</li>
+    <li><strong>Security</strong>: least-privilege IAM, encryption at rest/in transit, GuardDuty, Security Hub</li>
+    <li><strong>Reliability</strong>: Multi-AZ, Auto Scaling, backups, chaos engineering</li>
+    <li><strong>Performance Efficiency</strong>: right-sizing, caching, serverless, placement groups</li>
+    <li><strong>Cost Optimisation</strong>: Savings Plans, Spot, lifecycle policies, Cost Explorer</li>
+  </ul>
+
+  <h2>Cost Governance</h2>
+  <ul>
+    <li><strong>Cost Explorer</strong>: visualise, filter, forecast; RI and Savings Plans recommendations</li>
+    <li><strong>AWS Budgets</strong>: alerts + Budgets Actions (apply SCPs, stop EC2/RDS) when thresholds are hit</li>
+    <li><strong>Cost Allocation Tags</strong>: activate in Billing; group costs by team/project/environment</li>
+    <li><strong>Trusted Advisor</strong>: cost optimisation checks — idle resources, underutilised EC2, unassociated EIPs</li>
+  </ul>
+
+  <h2>Common Exam Scenarios</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Scenario</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Reduce cost for interruptible batch jobs</td><td>Spot Instances with checkpointing</td></tr>
+      <tr><td>Most flexible discount for mixed workloads</td><td>Compute Savings Plans</td></tr>
+      <tr><td>Eliminate NAT Gateway charges for S3/DynamoDB</td><td>VPC Gateway Endpoints (free)</td></tr>
+      <tr><td>Reduce DynamoDB read cost for hot items</td><td>DynamoDB DAX</td></tr>
+      <tr><td>Identify underutilised EC2</td><td>Compute Optimizer + Cost Explorer</td></tr>
+      <tr><td>Auto-stop resources when budget exceeded</td><td>AWS Budgets + Budgets Actions</td></tr>
+      <tr><td>Reduce global API latency, non-cacheable</td><td>AWS Global Accelerator</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Compute Savings Plans apply <strong>before</strong> EC2 Instance Savings Plans — most flexible but lower max discount</li>
+      <li>Reserved Instances <strong>cannot be cancelled</strong>; standard RIs can be sold on Marketplace; convertible cannot</li>
+      <li>S3 Intelligent-Tiering monitoring fee makes it uneconomical for objects &lt; 128 KB</li>
+      <li>Data transfer <strong>into</strong> AWS is always free — only internet egress is charged</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">Compute Optimisation</a></li>
+      <li><a href="#">Storage Cost</a></li>
+      <li><a href="#">Networking Cost</a></li>
+      <li><a href="#">Database</a></li>
+      <li><a href="#">Observability</a></li>
+      <li><a href="#">Well-Architected</a></li>
+      <li><a href="#">Governance</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Other Domains</h4>
+    <ul>
+      <li><a href="../01-organizational-complexity/index.html">Domain 1 — Org Complexity</a></li>
+      <li><a href="../02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+      <li><a href="../04-cost-performance/index.html">Domain 4 — Migration</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

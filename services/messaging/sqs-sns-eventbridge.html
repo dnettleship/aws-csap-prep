@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQS, SNS &amp; EventBridge — SAP-C02</title>
+  <link rel="stylesheet" href="../../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../../index.html">Home</a>
+    <a href="../../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../networking/transit-gateway.html" class="active">Services</a>
+    <a href="../../architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="../../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../../index.html">Home</a><span>/</span>
+    <a href="../../index.html#services">Services</a><span>/</span>
+    <span>SQS / SNS / EventBridge</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-int">Integration</div>
+    <h1>SQS, SNS &amp; EventBridge</h1>
+    <p class="subtitle">Decoupling patterns, fan-out, event routing, FIFO ordering, DLQs</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>SQS — Simple Queue Service</h2>
+
+  <h3>Standard vs FIFO</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Standard Queue</th><th>FIFO Queue</th></tr></thead>
+    <tbody>
+      <tr><td>Ordering</td><td>Best-effort (not guaranteed)</td><td>Strict first-in-first-out per message group</td></tr>
+      <tr><td>Delivery</td><td>At-least-once (duplicates possible)</td><td>Exactly-once processing (deduplication)</td></tr>
+      <tr><td>Throughput</td><td>Unlimited</td><td>3,000 msg/s with batching; 300 msg/s without</td></tr>
+      <tr><td>Deduplication</td><td>Consumer must handle duplicates</td><td>Deduplication ID; 5-min dedup window</td></tr>
+      <tr><td>Message groups</td><td>No</td><td>MessageGroupId for parallelism within FIFO</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Key SQS Concepts</h3>
+  <ul>
+    <li><strong>Visibility timeout</strong> — when a consumer receives a message, it becomes invisible for this duration (default 30s); if not deleted, it reappears for another consumer; set to &gt; max processing time</li>
+    <li><strong>Dead-Letter Queue (DLQ)</strong> — messages that fail processing N times (maxReceiveCount) are moved here; use for debugging and isolating poison pill messages</li>
+    <li><strong>Long polling</strong> — consumer waits up to 20s for messages; reduces empty responses and cost vs short polling</li>
+    <li><strong>Message retention</strong> — 1 minute to 14 days (default 4 days)</li>
+    <li><strong>Max message size</strong> — 256 KB; use the Extended Client Library for larger payloads (stores in S3)</li>
+    <li><strong>Delay queues</strong> — delay message delivery by up to 15 minutes at queue or per-message level</li>
+  </ul>
+
+  <h2>SNS — Simple Notification Service</h2>
+  <ul>
+    <li>Pub/sub: one publisher, many subscribers; push-based (no polling)</li>
+    <li><strong>Subscribers</strong>: SQS, Lambda, HTTP/HTTPS, email, SMS, mobile push, Kinesis Data Firehose</li>
+    <li><strong>Fan-out pattern</strong>: SNS topic → multiple SQS queues; decouple publisher from multiple consumers</li>
+    <li><strong>Filter policies</strong>: subscriber-level JSON filters; each subscriber only receives matching messages (reduces processing cost)</li>
+    <li><strong>SNS FIFO</strong>: ordered delivery + deduplication; only SQS FIFO queues as subscribers</li>
+    <li><strong>Message archiving &amp; replay</strong>: store messages in S3 for compliance and reprocessing</li>
+    <li><strong>DLQ support</strong>: per-subscription DLQ for failed deliveries</li>
+  </ul>
+
+  <h2>EventBridge</h2>
+  <ul>
+    <li>Serverless event bus; routes events from AWS services, SaaS providers, and custom applications</li>
+    <li><strong>Event buses</strong>: default (AWS service events), custom (application events), partner (SaaS events)</li>
+    <li><strong>Rules</strong>: match events by pattern (JSON path conditions); send to one or more targets; up to 5 targets per rule</li>
+    <li><strong>Targets</strong>: Lambda, SQS, SNS, Step Functions, Kinesis, API GW, ECS tasks, EventBridge bus in another account</li>
+    <li><strong>Schema Registry</strong>: auto-discovers event schemas; generates code bindings for type-safe handling</li>
+    <li><strong>Pipes</strong>: point-to-point connections with optional filtering and enrichment (source → filter → enrich → target)</li>
+    <li><strong>Scheduling</strong>: EventBridge Scheduler replaces CloudWatch Events rules for cron/rate-based scheduling</li>
+  </ul>
+
+  <h2>Choosing the Right Service</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Requirement</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td>Decouple producer from consumer; consumer pulls at own pace</td><td>SQS</td></tr>
+      <tr><td>Guaranteed ordering + exactly-once per financial transaction</td><td>SQS FIFO</td></tr>
+      <tr><td>One event → multiple different consumers in parallel</td><td>SNS fan-out → multiple SQS queues</td></tr>
+      <tr><td>Route events from SaaS tools (Datadog, Zendesk) to Lambda</td><td>EventBridge partner event bus</td></tr>
+      <tr><td>Complex event routing rules that change frequently</td><td>EventBridge rules</td></tr>
+      <tr><td>Buffer writes to protect a downstream database</td><td>SQS → Lambda → RDS</td></tr>
+      <tr><td>Trigger Lambda on S3 object creation (event-driven)</td><td>S3 Event → SNS or EventBridge or direct Lambda trigger</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Common Patterns</h2>
+  <ul>
+    <li><strong>Fan-out</strong>: S3 → SNS → [SQS A, SQS B, Lambda C] — one upload triggers parallel processing pipelines</li>
+    <li><strong>Worker pool</strong>: SQS → Auto Scaling Group (scale on queue depth) — handles bursty jobs</li>
+    <li><strong>Cross-account events</strong>: EventBridge resource policy allows another account to put events on a bus</li>
+    <li><strong>Saga / orchestration</strong>: Step Functions for multi-step workflows with SQS/SNS between steps for loose coupling</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>SQS Standard can deliver messages <strong>out of order and more than once</strong> — consumers must be idempotent</li>
+      <li>FIFO queues have a <strong>throughput limit</strong> — Standard queues if you need unlimited throughput; implement ordering in the consumer</li>
+      <li>SNS cannot deliver to SQS in a different account without an SQS resource policy granting SNS permission</li>
+      <li>EventBridge event buses do <strong>not</strong> retain messages — if no rule matches, the event is dropped</li>
+      <li>Visibility timeout must be <strong>longer than consumer processing time</strong> — otherwise the same message is processed twice</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">SQS Standard vs FIFO</a></li>
+      <li><a href="#">SQS Concepts</a></li>
+      <li><a href="#">SNS</a></li>
+      <li><a href="#">EventBridge</a></li>
+      <li><a href="#">Choosing a Service</a></li>
+      <li><a href="#">Common Patterns</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="../compute/lambda.html">Lambda</a></li>
+      <li><a href="../compute/ecs-eks.html">ECS / EKS</a></li>
+      <li><a href="../../domains/02-new-solutions/index.html">Domain 2 — New Solutions</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

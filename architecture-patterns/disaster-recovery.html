@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Disaster Recovery Patterns — SAP-C02</title>
+  <link rel="stylesheet" href="../site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="../index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="../services/networking/transit-gateway.html">Services</a>
+    <a href="disaster-recovery.html" class="active">Patterns</a>
+    <a href="../cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="../practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page">
+  <nav class="breadcrumb">
+    <a href="../index.html">Home</a><span>/</span>
+    <a href="../index.html#patterns">Patterns</a><span>/</span>
+    <span>Disaster Recovery</span>
+  </nav>
+
+  <div class="page-header">
+    <div class="domain-tag card-tag tag-pattern">Architecture Pattern</div>
+    <h1>Disaster Recovery Patterns</h1>
+    <p class="subtitle">RPO/RTO tradeoffs, four DR strategies, Route 53 routing policies, AWS services by DR role</p>
+  </div>
+
+  <div class="content-layout">
+  <div class="content-main">
+
+  <h2>Key Metrics</h2>
+  <ul>
+    <li><strong>RPO (Recovery Point Objective)</strong> — maximum acceptable data loss measured in time. "How old can the restored data be?"</li>
+    <li><strong>RTO (Recovery Time Objective)</strong> — maximum acceptable downtime. "How long can we be unavailable?"</li>
+  </ul>
+  <p>Lower RPO/RTO = more complex architecture = higher cost. The exam tests your ability to match a strategy to a given RPO/RTO + budget constraint.</p>
+
+  <h2>DR Strategies</h2>
+
+  <div class="strategy-card">
+    <h3>1. Backup &amp; Restore <span class="badge badge-rpo">RPO: hours</span><span class="badge badge-rto">RTO: hours</span><span class="badge badge-cheap">Cheapest</span></h3>
+    <ul>
+      <li>Periodic backups to S3/Glacier; infrastructure rebuilt from scratch on failure</li>
+      <li>Use CloudFormation for infra provisioning, AWS Backup for data</li>
+      <li>No standby infrastructure costs; longest recovery time</li>
+    </ul>
+  </div>
+
+  <div class="strategy-card">
+    <h3>2. Pilot Light <span class="badge badge-rpo">RPO: minutes</span><span class="badge badge-rto">RTO: 30–60 min</span></h3>
+    <ul>
+      <li>Core data services always running in DR region (e.g., database replication); compute is off</li>
+      <li>On DR event: provision compute (EC2/ASG), update DNS to DR region</li>
+      <li>Aurora Global Database or RDS cross-region replica keeps data warm</li>
+    </ul>
+  </div>
+
+  <div class="strategy-card">
+    <h3>3. Warm Standby <span class="badge badge-rpo">RPO: seconds–minutes</span><span class="badge badge-rto">RTO: minutes</span></h3>
+    <ul>
+      <li>Full but scaled-down functional environment running continuously in DR region</li>
+      <li>On DR event: scale up ASG/database to production capacity, shift traffic via Route 53</li>
+      <li>Costs more than pilot light but RTO is much lower — no infrastructure provisioning needed</li>
+    </ul>
+  </div>
+
+  <div class="strategy-card">
+    <h3>4. Active-Active <span class="badge badge-rpo">RPO: near zero</span><span class="badge badge-rto">RTO: near zero</span><span class="badge badge-costly">Most Expensive</span></h3>
+    <ul>
+      <li>Full production capacity running simultaneously in two+ regions</li>
+      <li>Route 53 latency routing or Global Accelerator distributes traffic</li>
+      <li>Requires application to handle concurrent multi-region writes (DynamoDB Global Tables, Aurora Global DB)</li>
+    </ul>
+  </div>
+
+  <h2>Decision Tree</h2>
+  <pre>What are your RPO and RTO requirements?
+
+  RPO &lt; 1 min  AND  RTO &lt; 1 min?
+    → Active-Active (multi-site)
+
+  RPO &lt; 1 min,  RTO &lt; 10 min?
+    → Warm Standby
+
+  RPO &lt; 15 min, RTO &lt; 1 hr?
+    → Pilot Light
+
+  Cost is primary concern, hours of downtime acceptable?
+    → Backup &amp; Restore</pre>
+
+  <h2>AWS Services by DR Role</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Role</th><th>Service</th></tr></thead>
+    <tbody>
+      <tr><td>DNS failover</td><td>Route 53 health checks + failover routing policy</td></tr>
+      <tr><td>Global traffic distribution</td><td>Route 53 latency routing / AWS Global Accelerator</td></tr>
+      <tr><td>Database replication</td><td>Aurora Global Database, DynamoDB Global Tables</td></tr>
+      <tr><td>Object storage replication</td><td>S3 Cross-Region Replication (CRR)</td></tr>
+      <tr><td>Infrastructure as code</td><td>CloudFormation StackSets</td></tr>
+      <tr><td>AMI replication</td><td>EC2 copy AMI to DR region</td></tr>
+      <tr><td>Backup orchestration</td><td>AWS Backup with cross-region backup</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Route 53 Routing Policies for DR</h2>
+  <ul>
+    <li><strong>Failover</strong>: active-passive; primary serves traffic; health check triggers cutover to secondary</li>
+    <li><strong>Latency</strong>: routes each user to the lowest-latency region (active-active)</li>
+    <li><strong>Weighted</strong>: split traffic by percentage — use for canary deploys or gradual failover</li>
+    <li><strong>Geolocation</strong>: route by country/continent — use for data sovereignty</li>
+    <li><strong>Geoproximity</strong>: route by geographic distance with Traffic Flow bias</li>
+    <li><strong>Calculated health checks</strong>: aggregate multiple child health checks into one parent</li>
+  </ul>
+
+  <div class="callout callout-warning">
+    <ul>
+      <li>Route 53 health check propagation: ~30–60 seconds — factor this into your RTO calculations</li>
+      <li>Aurora Global Database <strong>managed failover</strong> is automatic (&lt; 1 min); <strong>manual failover</strong> requires explicit API/console action</li>
+      <li>S3 CRR replicates new objects only — use S3 Batch Replication for existing objects</li>
+      <li>DynamoDB Global Tables: conflicts resolved by "last writer wins" — design for idempotency</li>
+      <li>RDS cross-region read replicas are <strong>asynchronous</strong> — non-zero RPO; suitable for pilot light/warm standby only</li>
+    </ul>
+  </div>
+
+  </div>
+  <aside class="sidebar">
+    <h4>On this page</h4>
+    <ul>
+      <li><a href="#">RPO / RTO</a></li>
+      <li><a href="#">Backup &amp; Restore</a></li>
+      <li><a href="#">Pilot Light</a></li>
+      <li><a href="#">Warm Standby</a></li>
+      <li><a href="#">Active-Active</a></li>
+      <li><a href="#">Decision Tree</a></li>
+      <li><a href="#">Route 53 Policies</a></li>
+    </ul>
+    <hr style="border-color:var(--border);margin:0.75rem 0" />
+    <h4>Related</h4>
+    <ul>
+      <li><a href="high-availability.html">High Availability</a></li>
+      <li><a href="../services/databases/aurora.html">Aurora</a></li>
+    </ul>
+  </aside>
+  </div>
+</div>
+</body>
+</html>

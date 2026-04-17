@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAP-C02 Revision</title>
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="domains/01-organizational-complexity/index.html">Domains</a>
+    <a href="services/networking/transit-gateway.html">Services</a>
+    <a href="architecture-patterns/disaster-recovery.html">Patterns</a>
+    <a href="cheatsheets/exam-traps.html">Cheatsheets</a>
+    <a href="practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
+  </div>
+</nav>
+
+<div class="page-wide">
+
+  <div class="home-hero">
+    <h1>AWS Solutions Architect<br>Professional Revision</h1>
+    <p>Structured notes, service deep dives, and a full mock exam — all in one place.</p>
+    <a href="practice/mock-exams/mock-exam-01.html" class="exam-cta">Take Mock Exam →</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-val">75</span><span class="stat-lbl">Questions (real exam)</span></div>
+    <div class="stat"><span class="stat-val">165</span><span class="stat-lbl">Minutes</span></div>
+    <div class="stat"><span class="stat-val">750</span><span class="stat-lbl">Passing score</span></div>
+    <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">Domains</span></div>
+  </div>
+
+  <!-- Domains -->
+  <p class="section-label">Exam Domains</p>
+  <div class="card-grid">
+    <a href="domains/01-organizational-complexity/index.html" class="card">
+      <div class="card-tag tag-d1">Domain 1</div>
+      <div class="weight" style="color:#60a5fa">26%</div>
+      <h3>Organizational Complexity</h3>
+      <p>Organizations, SCPs, Control Tower, multi-account networking, centralised security</p>
+    </a>
+    <a href="domains/02-new-solutions/index.html" class="card">
+      <div class="card-tag tag-d2">Domain 2</div>
+      <div class="weight" style="color:#4ade80">29%</div>
+      <h3>New Solutions</h3>
+      <p>Compute, storage, databases, decoupling, security architecture, HA design</p>
+    </a>
+    <a href="domains/03-migration-modernization/index.html" class="card">
+      <div class="card-tag tag-d3">Domain 3</div>
+      <div class="weight" style="color:#fb923c">25%</div>
+      <h3>Continuous Improvement</h3>
+      <p>Cost optimisation, right-sizing, observability, Well-Architected reviews, cost governance</p>
+    </a>
+    <a href="domains/04-cost-performance/index.html" class="card">
+      <div class="card-tag tag-d4">Domain 4</div>
+      <div class="weight" style="color:#c084fc">20%</div>
+      <h3>Migration &amp; Modernization</h3>
+      <p>7 Rs, MGN, DMS/SCT, DataSync, Snow family, Strangler Fig, hybrid connectivity</p>
+    </a>
+  </div>
+
+  <!-- Services -->
+  <p class="section-label">Service Deep Dives</p>
+  <div class="card-grid-2">
+    <a href="services/networking/transit-gateway.html" class="card">
+      <div class="card-tag tag-net">Networking</div>
+      <h3>Transit Gateway</h3>
+      <p>Hub-and-spoke topology, route tables, segmentation, inter-region peering, vs VPC Peering</p>
+    </a>
+    <a href="services/networking/direct-connect.html" class="card">
+      <div class="card-tag tag-net">Networking</div>
+      <h3>Direct Connect</h3>
+      <p>VIF types, DX Gateway, resilience patterns, encryption options, LAG</p>
+    </a>
+    <a href="services/networking/route53.html" class="card">
+      <div class="card-tag tag-net">Networking</div>
+      <h3>Route 53</h3>
+      <p>Routing policies, health checks, alias vs CNAME, private hosted zones, DNS failover</p>
+    </a>
+    <a href="services/networking/cloudfront.html" class="card">
+      <div class="card-tag tag-net">Networking</div>
+      <h3>CloudFront &amp; Global Accelerator</h3>
+      <p>CDN caching, OAC, Lambda@Edge, origin failover, Anycast acceleration</p>
+    </a>
+    <a href="services/security/iam-organizations.html" class="card">
+      <div class="card-tag tag-sec">Security</div>
+      <h3>IAM &amp; Organizations</h3>
+      <p>Policy evaluation logic, SCP patterns, permission boundaries, Identity Center</p>
+    </a>
+    <a href="services/security/kms.html" class="card">
+      <div class="card-tag tag-sec">Security</div>
+      <h3>KMS &amp; Secrets Manager</h3>
+      <p>Key types, envelope encryption, key policy, CloudHSM, automatic secret rotation</p>
+    </a>
+    <a href="services/databases/aurora.html" class="card">
+      <div class="card-tag tag-db">Databases</div>
+      <h3>Amazon Aurora</h3>
+      <p>Global Database, Serverless v2, Multi-Master, Backtrack, vs RDS comparison</p>
+    </a>
+    <a href="services/databases/dynamodb.html" class="card">
+      <div class="card-tag tag-db">Databases</div>
+      <h3>DynamoDB</h3>
+      <p>Partition keys, GSI/LSI, DAX, Global Tables, Streams, capacity modes, TTL</p>
+    </a>
+    <a href="services/databases/elasticache.html" class="card">
+      <div class="card-tag tag-db">Databases</div>
+      <h3>ElastiCache</h3>
+      <p>Redis vs Memcached, Multi-AZ failover, caching strategies, session store, pub/sub</p>
+    </a>
+    <a href="services/compute/lambda.html" class="card">
+      <div class="card-tag tag-compute">Compute</div>
+      <h3>Lambda &amp; Step Functions</h3>
+      <p>Concurrency, cold starts, Provisioned Concurrency, event sources, orchestration</p>
+    </a>
+    <a href="services/compute/ecs-eks.html" class="card">
+      <div class="card-tag tag-compute">Compute</div>
+      <h3>ECS / EKS / Fargate</h3>
+      <p>Container orchestration, launch types, awsvpc networking, App2Container, Spot</p>
+    </a>
+    <a href="services/messaging/sqs-sns-eventbridge.html" class="card">
+      <div class="card-tag tag-int">Integration</div>
+      <h3>SQS / SNS / EventBridge</h3>
+      <p>FIFO ordering, DLQs, fan-out, filter policies, event routing, SaaS integration</p>
+    </a>
+    <a href="services/monitoring/cloudwatch.html" class="card">
+      <div class="card-tag tag-monitor">Monitoring</div>
+      <h3>CloudWatch &amp; X-Ray</h3>
+      <p>Metrics, alarms, Logs Insights, Container Insights, distributed tracing, CloudTrail</p>
+    </a>
+  </div>
+
+  <!-- Patterns -->
+  <p class="section-label">Architecture Patterns</p>
+  <div class="card-grid-2">
+    <a href="architecture-patterns/disaster-recovery.html" class="card">
+      <div class="card-tag tag-pattern">Pattern</div>
+      <h3>Disaster Recovery</h3>
+      <p>Backup &amp; Restore → Pilot Light → Warm Standby → Active-Active with RPO/RTO decision tree</p>
+    </a>
+    <a href="architecture-patterns/high-availability.html" class="card">
+      <div class="card-tag tag-pattern">Pattern</div>
+      <h3>High Availability</h3>
+      <p>Multi-AZ patterns, load balancer selection, Auto Scaling policies, stateless design</p>
+    </a>
+  </div>
+
+  <!-- Cheatsheets -->
+  <p class="section-label">Cheatsheets</p>
+  <div class="card-grid">
+    <a href="cheatsheets/storage-class-decision-tree.html" class="card">
+      <div class="card-tag tag-cheat">Cheatsheet</div>
+      <h3>S3 Storage Classes</h3>
+      <p>Decision tree, lifecycle policy example, Object Lock WORM</p>
+    </a>
+    <a href="cheatsheets/vpc-connectivity-options.html" class="card">
+      <div class="card-tag tag-cheat">Cheatsheet</div>
+      <h3>VPC Connectivity</h3>
+      <p>On-prem to AWS, VPC-to-VPC, endpoints, PrivateLink vs peering</p>
+    </a>
+    <a href="cheatsheets/exam-traps.html" class="card">
+      <div class="card-tag tag-cheat">Cheatsheet</div>
+      <h3>Exam Traps</h3>
+      <p>30+ common gotchas across IAM, networking, compute, databases, migration, cost</p>
+    </a>
+  </div>
+
+  <!-- Mock exams -->
+  <p class="section-label" id="practice">Practice Exams</p>
+  <div class="card-grid-2">
+    <a href="practice/mock-exams/mock-exam-01.html" class="card" style="border-color: var(--accent);">
+      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
+      <h3>Set 1 — 10 Questions</h3>
+      <p>One question at a time. Explanations and notes links on every answer.</p>
+    </a>
+    <a href="practice/mock-exams/mock-exam-02.html" class="card" style="border-color: var(--accent);">
+      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
+      <h3>Set 2 — 10 Questions</h3>
+      <p>Fresh question set covering all four domains.</p>
+    </a>
+    <a href="practice/mock-exams/mock-exam-03.html" class="card" style="border-color: var(--accent);">
+      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
+      <h3>Set 3 — 10 Questions</h3>
+      <p>Advanced scenarios: networking edge cases, DR trade-offs, cost optimisation.</p>
+    </a>
+    <a href="practice/mock-exams/mock-exam-04.html" class="card" style="border-color: var(--accent);">
+      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
+      <h3>Set 4 — 10 Questions</h3>
+      <p>Security, compliance, and multi-account architecture focus.</p>
+    </a>
+    <a href="practice/mock-exams/mock-exam-05.html" class="card" style="border-color: var(--accent);">
+      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
+      <h3>Set 5 — 10 Questions</h3>
+      <p>Migration, modernisation, observability, and serverless patterns.</p>
+    </a>
+  </div>
+
+</div>
+</body>
+</html>
