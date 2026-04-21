@@ -193,7 +193,7 @@ function showScore(){
     row.innerHTML=`<span class="d-label">${DOMAIN_NAMES[d]}</span><div class="domain-bar-bg"><div class="domain-bar${weak?" weak":""}" style="width:${pctD}%"></div></div><span class="d-score" style="color:${weak?"#f87171":"#4ade80"}">${s.correct}/${s.total} (${pctD}%)</span>`;
     breakdownEl.appendChild(row);
   });
-  progressBar.style.width="100%";scoreCard.style.display="block";scoreCard.scrollIntoView({behavior:"smooth",block:"start"});
+  progressBar.style.width="100%";try{localStorage.setItem('sap-exam-'+window.location.pathname.split('/').pop().replace('.html',''),JSON.stringify({score:pct,date:new Date().toISOString().split('T')[0]}));}catch(e){}scoreCard.style.display="block";scoreCard.scrollIntoView({behavior:"smooth",block:"start"});
 }
 document.getElementById("downloadBtn").addEventListener("click",()=>{
   const domainStats={};[1,2,3,4].forEach(d=>{domainStats[d]={name:DOMAIN_NAMES[d],correct:0,total:0,weakQuestions:[]};});

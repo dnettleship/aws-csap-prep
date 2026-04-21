@@ -210,5 +210,22 @@
   </div>
 
 </div>
+<script>
+document.querySelectorAll('a.card[href*="mock-exam"]').forEach(function(card) {
+  var file = card.getAttribute('href').split('/').pop().replace('.html','');
+  var raw = null;
+  try { raw = localStorage.getItem('sap-exam-' + file); } catch(e) {}
+  if (!raw) return;
+  var data;
+  try { data = JSON.parse(raw); } catch(e) { return; }
+  var score = data.score;
+  var color = score >= 75 ? '#4ade80' : score >= 60 ? '#fbbf24' : '#f87171';
+  var badge = document.createElement('div');
+  badge.style.cssText = 'margin-top:.6rem;display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;color:' + color + ';';
+  badge.innerHTML = '&#10003; ' + score + '% &nbsp;<span style="font-weight:400;color:var(--muted);font-size:.7rem">' + data.date + '</span>';
+  card.appendChild(badge);
+  card.style.borderColor = color;
+});
+</script>
 </body>
 </html>
