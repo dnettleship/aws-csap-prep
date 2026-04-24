@@ -8,24 +8,14 @@
 </head>
 <body>
 
-<nav class="site-nav">
-  <a href="index.html" class="nav-logo">SAP-C02 <span class="badge">Pro</span></a>
-  <div class="nav-links">
-    <a href="index.html" class="active">Home</a>
-    <a href="domains/01-organizational-complexity/index.html">Domains</a>
-    <a href="services/networking/transit-gateway.html">Services</a>
-    <a href="architecture-patterns/disaster-recovery.html">Patterns</a>
-    <a href="cheatsheets/exam-traps.html">Cheatsheets</a>
-    <a href="practice/mock-exams/mock-exam-01.html" class="nav-cta">Mock Exam</a>
-  </div>
-</nav>
+<script src="nav.js"></script>
 
 <div class="page-wide">
 
   <div class="home-hero">
     <h1>AWS Solutions Architect<br>Professional Revision</h1>
     <p>Structured notes, service deep dives, and a full mock exam — all in one place.</p>
-    <a href="practice/mock-exams/mock-exam-01.html" class="exam-cta">Take Mock Exam →</a>
+    <a href="practice/exam.html" class="exam-cta">Take Practice Exam →</a>
   </div>
 
   <div class="stats">
@@ -170,67 +160,15 @@
   </div>
 
   <!-- Practice exam -->
-  <p class="section-label" id="practice">Practice Exams</p>
+  <p class="section-label" id="practice">Practice Exam</p>
   <div class="card-grid-2">
     <a href="practice/exam.html" class="card" style="border-color:#818cf8;grid-column:1/-1">
-      <div class="card-tag" style="background:#818cf8;color:#fff;">New</div>
-      <h3>Dynamic Practice Exam — 100 question bank</h3>
-      <p>Choose 10–30 questions, filter by domain, get a downloadable HTML report on completion.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-01.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 1 — 10 Questions</h3>
-      <p>One question at a time. Explanations and notes links on every answer.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-02.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 2 — 10 Questions</h3>
-      <p>Fresh question set covering all four domains.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-03.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 3 — 10 Questions</h3>
-      <p>Advanced scenarios: networking edge cases, DR trade-offs, cost optimisation.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-04.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 4 — 10 Questions</h3>
-      <p>Security, compliance, and multi-account architecture focus.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-05.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 5 — 10 Questions</h3>
-      <p>Migration, modernisation, observability, and serverless patterns.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-06.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 6 — Targeted Practice</h3>
-      <p>Migration &amp; New Solutions focus — generated from Mock Exam 1 results.</p>
-    </a>
-    <a href="practice/mock-exams/mock-exam-07.html" class="card" style="border-color: var(--accent);">
-      <div class="card-tag" style="background:var(--accent);color:#fff;">Mock Exam</div>
-      <h3>Set 7 — Databases &amp; Service Communication</h3>
-      <p>Aurora, DynamoDB, ElastiCache, SQS, SNS, EventBridge, and Step Functions deep dive.</p>
+      <div class="card-tag" style="background:#818cf8;color:#fff;">Practice</div>
+      <h3>Dynamic Practice Exam — 200 question bank</h3>
+      <p>Choose 10–75 questions, filter by domain, instant feedback on every answer, and a downloadable HTML report on completion.</p>
     </a>
   </div>
 
 </div>
-<script>
-document.querySelectorAll('a.card[href*="mock-exam"]').forEach(function(card) {
-  var file = card.getAttribute('href').split('/').pop().replace('.html','');
-  var raw = null;
-  try { raw = localStorage.getItem('sap-exam-' + file); } catch(e) {}
-  if (!raw) return;
-  var data;
-  try { data = JSON.parse(raw); } catch(e) { return; }
-  var score = data.score;
-  var color = score >= 75 ? '#4ade80' : score >= 60 ? '#fbbf24' : '#f87171';
-  var badge = document.createElement('div');
-  badge.style.cssText = 'margin-top:.6rem;display:inline-flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;color:' + color + ';';
-  badge.innerHTML = '&#10003; ' + score + '% &nbsp;<span style="font-weight:400;color:var(--muted);font-size:.7rem">' + data.date + '</span>';
-  card.appendChild(badge);
-  card.style.borderColor = color;
-});
-</script>
 </body>
 </html>
